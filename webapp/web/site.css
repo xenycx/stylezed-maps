@@ -213,9 +213,10 @@ body.page #toasts { position: fixed; top: 64px; }
 .admin h1 { font-size: 22px; margin-bottom: 4px; }
 .admin .muted { color: var(--text-3); }
 .admin-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 22px; }
-.stat { padding: 10px 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); min-width: 130px; }
-.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
-.stat span { color: var(--text-3); font-size: 12px; }
+/* admin number boxes (scoped: the editor's path stats are also .stat) */
+.admin-stats .stat { padding: 10px 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); min-width: 130px; }
+.admin-stats .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.admin-stats .stat span { color: var(--text-3); font-size: 12px; }
 .admin-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
 .admin-tabs button { height: 38px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-3); font-weight: 500; white-space: nowrap; }
 .admin-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
