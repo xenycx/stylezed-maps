@@ -41,6 +41,20 @@ SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,60}")
 THEME_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,40}")
 LANG_RE = re.compile(r"[a-z]{2,3}")
 DEFAULT_THEME = "storybook"
+
+
+def build_id():
+    """Short fingerprint of the site's front-end files (names, sizes, times): changes with every deploy."""
+    import hashlib
+    h = hashlib.sha1()
+    for f in sorted(WEB.rglob("*")):
+        if f.is_file():
+            st = f.stat()
+            h.update(f"{f.relative_to(WEB)}:{st.st_size}:{int(st.st_mtime)}".encode())
+    return h.hexdigest()[:10]
+
+
+BUILD = build_id()
 MAX_BODY = 2 * 1024 * 1024
 MIME = dict(studio.MIME, **{".pdf": "application/pdf", ".ico": "image/x-icon"})
 COMPRESS = {".html", ".css", ".js", ".json", ".svg", ".txt"}
@@ -466,9 +480,12 @@ class Handler(BaseHTTPRequestHandler):
         parts = [p for p in unquote(path).split("/") if p]
         if any(p in (".", "..") or p.startswith(".") or "\\" in p or "\x00" in p for p in parts) or not parts:
             raise ApiError(404, "not_found", "Not found.")
+        versioned = len(parts) > 2 and parts[0] == "v" and parts[2] == "web"
+        if versioned:  # /v/<build>/web/… — any build id works, the files are always the current ones
+            parts = parts[2:]
         head = parts[0]
         if head == "web":
-            base, cache = WEB, "no-cache"  # revalidate (cheap 304s): a deploy must reach every browser at once
+            base, cache = WEB, ("public, max-age=31536000, immutable" if versioned else "no-cache")
             target = WEB.joinpath(*parts[1:])
         elif head == "fonts":
             base, cache = ROOT / "fonts", "public, max-age=604800"
@@ -500,7 +517,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_file(target, cache)
 
     def page(self, name):
-        self.send_file(WEB / name, "no-cache")
+        # pages are never cached; the scripts and styles they load carry the build in their path, so a proxy that
+        # forces long browser caching (Cloudflare does) still cannot serve the old code after a deploy
+        html = (WEB / name).read_text().replace('="/web/', f'="/v/{BUILD}/web/')
+        self.send_bytes(html.encode(), "text/html; charset=utf-8", 200, "no-cache")
 
     # -- GET
     def route_get(self):
