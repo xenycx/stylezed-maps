@@ -180,6 +180,29 @@ function decoded(img) {
   });
 }
 
+// Sharper art for zooming in: the preview is 1600 px wide; on the first zoom past ~1:1 a 4000 px copy is fetched
+// (made on the server once per render, then cached) and swapped in under the same on-screen size.
+let hdFor = null;
+let hdTimer = 0;
+function maybeHd() {
+  clearTimeout(hdTimer);
+  hdTimer = setTimeout(() => {
+    const side = S.side;
+    if (!side || hdFor === side || S.wipe || !S.place) return;
+    if (view.k * (window.devicePixelRatio || 1) < 1.2) return;
+    hdFor = side;
+    const url = `${api.exportUrl(S.place.slug, { theme: side.theme, lang: side.lang, fmt: 'hd', mine: side._studio?.mine ? '1' : '0' })}&v=${side._studio?.mtime || ''}`;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    stage.classList.add('is-sharpening');
+    decoded(img)
+      .then(() => { if (S.side === side && !S.wipe) art.src = img.src; })
+      .catch(() => { /* keep the preview */ })
+      .finally(() => stage.classList.remove('is-sharpening'));
+  }, 300);
+}
+
 async function showSide(side, opts = {}) {
   const token = artToken += 1;
   const img = new Image();
@@ -406,6 +429,9 @@ async function boot() {
   if (isNarrow() || prefs.get('panel') === 'closed' || query.get('panel') === 'closed') $('#app').dataset.panel = 'closed';
 
   view.on('change', applyView);
+  view.on('change', maybeHd);
+  bus.on('side', maybeHd);
+  bus.on('baked', maybeHd);
   bus.on('tool', syncTool);
   bus.on('panel', () => { updateInsets(false); });
   bus.on('landmarkOpen', () => { if (isNarrow()) setPanel(false); });

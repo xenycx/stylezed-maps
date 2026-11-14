@@ -130,15 +130,26 @@ async function loadGallery(reset) {
   const list = $('#gallery');
   const cards = res.places.map((p) => h('li', h('a.card', { href: `/m/${encodeURIComponent(p.slug)}` },
     h('div.card-sheet', { class: `card-sheet${p.thumb ? '' : ' is-blank'}` },
-      p.thumb ? h('img', { src: p.thumb, alt: '', loading: 'lazy', width: 480, height: 640 }) : '…'),
-    h('div.card-name', cardName(p)),
+      p.thumb ? h('img', { src: p.thumb, alt: '', loading: 'lazy', width: 480, height: 640 }) : ''),
+    h('div.card-name', { lang: p.lang === 'ka' && uiLang() === 'ka' ? 'ka' : null }, cardName(p)),
     h('div.card-sub', p.display_name.split(', ').slice(1, 3).join(', ')))));
   if (reset) list.replaceChildren(...cards); else list.append(...cards);
+  if (reset && tab === 'all' && !q) fillDesk(res.places);
   offset += res.places.length;
   $('#more').hidden = !res.more;
   const empty = $('#gallery-empty');
   empty.hidden = list.children.length > 0;
   empty.textContent = t(tab === 'mine' ? 'home.mineEmpty' : 'home.empty');
+}
+
+/** The three newest prints, laid on the desk beside the search. */
+function fillDesk(places) {
+  const desk = $('#desk');
+  const prints = places.filter((p) => p.thumb).slice(0, 3);
+  desk.replaceChildren(...prints.map((p, i) => h('a.print', {
+    href: `/m/${encodeURIComponent(p.slug)}`, tabIndex: -1, style: `--i:${i}`,
+  }, h('img', { src: p.thumb, alt: '', width: 480, height: 640, decoding: 'async' }))));
+  desk.dataset.n = String(prints.length);
 }
 
 function setTab(id) {

@@ -14,6 +14,10 @@ Storage is one folder (`/data`): an SQLite database plus each place's map data a
   and the same place + size + language is never made twice.
 * Drawing a style takes 2–6 s in a separate process (memory goes back after each map); one at a time by default.
 * The browser shows a 1600 px JPG. Print PNG (3000 px) and PDFs are only made when someone downloads one, then cached.
+* Zooming in past 1:1 fetches a 4000 px JPG of that style, made once per drawing and cached.
+* New places get landmarks automatically (churches, fortresses, schools, caves, springs …) with icons from
+  `icons/auto/`. Add a kind in `KINDS` of `webapp/landmarks_auto.py`, or a new icon to `icons/auto/`.
+* Signed-in visitors can change the fonts of a style (from the fonts bundled in `fonts/`); that redraws only their copy.
 * Searching for places runs in the visitor's browser (straight to OpenStreetMap's Nominatim), not on the server.
 * Limits: 5 new places and 40 redraws per user per day, 30 new style drawings per day per anonymous visitor,
   60 jobs in the queue at most. All adjustable (below).

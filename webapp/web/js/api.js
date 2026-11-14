@@ -67,6 +67,8 @@ export const api = {
   submit: (slug, type, id) => call('POST', '/api/submit', { slug, type, id }),
   withdraw: (id) => call('POST', `/api/submit/${id}/withdraw`, {}),
   logout: () => call('POST', '/auth/logout', {}),
+  fonts: (slug, theme, lang) => call('GET', `/api/fonts/${encodeURIComponent(slug)}?${q({ theme, lang })}`),
+  setFont: (slug, theme, lang, role, family) => call('PUT', `/api/fonts/${encodeURIComponent(slug)}`, { theme, lang, role, family }),
   exportUrl: (slug, o) => `/api/export/${encodeURIComponent(slug)}?${q(o)}`,
 };
 

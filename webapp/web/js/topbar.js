@@ -7,10 +7,75 @@ import { t, localName, onLang } from './i18n.js';
 import { icon } from './icons.js';
 import { menuButton, closeMenu, toast } from './ui.js';
 import { api } from './api.js';
-import { renderAccount } from './session.js';
+import { renderAccount, session, signIn } from './session.js';
 import { isOpen, setPanel } from './panel.js';
 
 let actions;
+
+// ---- fonts: which font each text role of the current style uses, and what could replace it (per visitor)
+let fontState = null;      // { roles, families } for the place / style / language on screen
+let fontKey = '';
+let fontRole = null;       // role whose font list is showing (second step of the menu)
+let fontReopen = false;
+
+async function loadFonts(force) {
+  if (!S.place || !S.theme || S.place.status !== 'ready') { fontState = null; fontKey = ''; return; }
+  const key = `${S.place.slug}|${S.theme}|${S.lang}|${session.me?.id || ''}`;
+  if (key === fontKey && !force) return;
+  fontKey = key;
+  fontState = null;
+  try {
+    const st = await api.fonts(S.place.slug, S.theme, S.lang);
+    if (key === fontKey) fontState = st;
+  } catch { /* the menu says so */ }
+}
+
+function roleLabel(id) {
+  const k = `fonts.role.${id}`;
+  const s = t(k);
+  return s === k ? id : s;
+}
+
+function reopenFonts() {
+  fontReopen = true;
+  setTimeout(() => $('#btn-fonts').click(), 0);
+}
+
+async function chooseFont(role, family) {
+  if (!session.me) { signIn(); return; }
+  try {
+    fontState = await api.setFont(S.place.slug, S.theme, S.lang, role, family);
+    fontRole = null;
+    actions.redraw();
+  } catch (e) {
+    toast(t('fonts.failed', { why: e.message || e.code }), { tone: 'error' });
+  }
+}
+
+function fontsMenu() {
+  if (!fontReopen) fontRole = null;
+  fontReopen = false;
+  if (!fontState) { loadFonts(true).then(() => { if (fontState) reopenFonts(); }); return { items: [], empty: t('fonts.loading') }; }
+  const role = fontState.roles.find((r) => r.id === fontRole);
+  if (!role) {
+    return {
+      items: fontState.roles.map((r) => ({
+        label: roleLabel(r.id), sub: r.font, meta: r.custom ? t('fonts.yours') : null, metaTone: 'ok', icon: 'type',
+        onSelect: () => { fontRole = r.id; reopenFonts(); },
+      })),
+      note: t(session.me ? 'fonts.noteSite' : 'fonts.signIn'),
+    };
+  }
+  return {
+    items: [
+      { label: t('fonts.back'), sub: roleLabel(role.id), icon: 'undo', onSelect: () => { fontRole = null; reopenFonts(); } },
+      { label: t('fonts.themeFont'), sub: role.theme_font, selected: !role.custom, onSelect: () => chooseFont(role.id, null) },
+    ].concat(fontState.families.map((f) => ({
+      label: f.family, selected: role.custom && role.font === f.family,
+      onSelect: () => chooseFont(role.id, f.family),
+    }))),
+  };
+}
 
 export function initTopbar(handlers) {
   actions = handlers;
@@ -22,6 +87,9 @@ export function initTopbar(handlers) {
   $('#btn-export').prepend(h('span', { html: icon('export') }));
   $('#btn-export').append(h('span', { html: icon('chevron') }));
   $('.brand').innerHTML = icon('logo');
+  $('#btn-fonts').prepend(h('span', { html: icon('type') }));
+  menuButton($('#btn-fonts'), fontsMenu, { role: 'menu', align: 'end', minWidth: 300 });
+  bus.on('target side session', () => loadFonts(false));
 
   menuButton($('#pick-theme'), () => ({
     items: (S.server?.themes || []).map((th) => {
@@ -110,6 +178,7 @@ function render() {
   $('#btn-undo').disabled = !store.canUndo;
   $('#btn-redo').disabled = !store.canRedo;
   $('#btn-export').disabled = !S.side;
+  $('#btn-fonts').disabled = busy || !place || !S.theme || place.status !== 'ready';
 
   const redraw = $('#btn-redraw');
   const needs = !!S.side && store.needsRedraw;

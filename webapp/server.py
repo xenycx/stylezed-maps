@@ -35,7 +35,7 @@ os.chdir(ROOT)
 import studio  # noqa: E402  (the local studio's validators, elevation profile, theme / icon lists)
 from studio import ApiError, atomic_write, read_json, validate_custom  # noqa: E402
 
-from webapp import auth, db, jobs, pipeline  # noqa: E402
+from webapp import auth, db, jobs, landmarks_auto, pipeline  # noqa: E402
 
 SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,60}")
 THEME_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,40}")
@@ -100,6 +100,45 @@ def doc_nonempty(doc):
     return any(doc.get(k) for k in ("places", "paths", "notes"))
 
 
+def font_choice(uid, slug, theme, lang, prefs=None):
+    """{role: family} a visitor picked for this place / style / language."""
+    prefs = db.get_fonts(uid, slug) if prefs is None else prefs
+    per = prefs.get(lang) if isinstance(prefs.get(lang), dict) else {}
+    got = per.get(theme)
+    return {r: f for r, f in got.items() if isinstance(r, str) and isinstance(f, str)} if isinstance(got, dict) else {}
+
+
+def personal(uid, slug, theme, lang, doc=None):
+    """Does this visitor see their own drawing of this style (additions or font choices) instead of the public one?"""
+    doc = db.get_doc(uid, slug) if doc is None else doc
+    return doc_nonempty(doc) or bool(font_choice(uid, slug, theme, lang))
+
+
+_families, _families_lock = {}, threading.Lock()
+
+
+def families(lang=None):
+    """Font families the renderer can use (fc-list is slow: cached per language for the life of the process)."""
+    with _families_lock:
+        if lang not in _families:
+            # only the fonts shipped in fonts/: the same list on every machine the site runs on
+            _families[lang] = [f for f in studio.font_families(lang) if f["project"]]
+        return _families[lang]
+
+
+def fonts_state(slug, theme, lang, me):
+    place = read_json(studio.font_prefs_path(slug))
+    place = place if isinstance(place, dict) else {}
+    per = place.get(lang) if isinstance(place.get(lang), dict) else {}
+    base = dict(per.get("*") or {}, **(per.get(theme) or {}))
+    mine = font_choice(me["id"], slug, theme, lang) if me else {}
+    roles = []
+    for r, fam in studio.theme_font_roles(theme, lang).items():
+        own = base.get(r, fam)
+        roles.append({"id": r, "theme_font": own, "font": mine.get(r, own), "custom": r in mine})
+    return {"roles": roles, "families": [{"family": f["family"], "project": f["project"]} for f in families(lang)]}
+
+
 def place_card(p):
     thumb = out_dir(p["slug"]) / "thumb.jpg"
     return {"slug": p["slug"], "name": p["name"], "name_local": p["name_local"], "lang": p["lang"], "size": p["size"],
@@ -115,8 +154,17 @@ def place_entry(p, me):
         renders += [r for r in renders_in(out_dir(p["slug"], me["id"])) if r["id"] not in have]
     return {"slug": p["slug"], "name": p["name"], "name_local": p["name_local"], "lang": p["lang"],
             "display_name": p["display_name"], "size": p["size"], "status": p["status"], "error": p["error"],
-            "renders": renders, "landmarks": None, "landmark_icons": [],
+            "renders": renders, "landmarks": landmarks_of(p["slug"]),
+            "landmark_icons": sorted(x.stem for x in (d / "icons").glob("*.svg")) if (d / "icons").is_dir() else [],
             "has_dem": (d / "dem.npy").is_file() and (d / "dem.json").is_file()}
+
+
+def landmarks_of(slug):
+    lm = read_json(ROOT / "data" / slug / "landmarks.json")
+    if not (isinstance(lm, dict) and isinstance(lm.get("landmarks"), list)):
+        return None
+    keep = ("id", "name", "name_local", "blurb", "blurb_local", "kind", "icon", "rank", "lon", "lat", "ele")
+    return [{k: x[k] for k in keep if k in x} for x in lm["landmarks"] if isinstance(x, dict) and isinstance(x.get("id"), str)]
 
 
 def build_place(slug):
@@ -128,6 +176,7 @@ def build_place(slug):
         db.run("UPDATE places SET status='fetching', error=NULL, updated=? WHERE slug=?", time.time(), slug)
         if not (ROOT / "data" / slug / "dem.npy").is_file():
             pipeline.fetch_place(slug, p)
+        auto_landmarks(slug)
         db.run("UPDATE places SET status='rendering', updated=? WHERE slug=?", time.time(), slug)
         job = jobs.render_q.submit("render", ("pub", slug, DEFAULT_THEME, p["lang"]),
                                    lambda: render_public(slug, DEFAULT_THEME, p["lang"]))
@@ -141,6 +190,36 @@ def build_place(slug):
         if p["created_by"]:
             db.give_back(f"u{p['created_by']}", "place")
         raise
+
+
+def auto_landmarks(slug):
+    """Pick landmarks + icons for a place that has no hand-made set. Never fails the place."""
+    try:
+        return landmarks_auto.build(slug)
+    except Exception as e:  # noqa: BLE001
+        print(f"auto landmarks failed for {slug}: {e}", file=sys.stderr, flush=True)
+        return None
+
+
+def backfill_landmarks():
+    """Places made before automatic landmarks: give them landmarks and redraw their public styles once."""
+    for p in db.all_("SELECT slug FROM places WHERE status='ready'"):
+        if (ROOT / "data" / p["slug"] / "landmarks.json").exists():
+            continue
+        if auto_landmarks(p["slug"]) is not None:
+            for r in renders_in(out_dir(p["slug"])):
+                (out_dir(p["slug"]) / f"{r['id']}.json").unlink(missing_ok=True)  # stale: drawn without landmarks
+            refresh_needed.add(p["slug"])
+    for slug in sorted(refresh_needed):
+        p = db.one("SELECT lang FROM places WHERE slug=?", slug)
+        if p:
+            try:
+                jobs.render_q.submit("render", ("pub", slug, DEFAULT_THEME, p["lang"]), lambda s=slug, l=p["lang"]: render_public(s, DEFAULT_THEME, l))
+            except jobs.Busy:
+                break
+
+
+refresh_needed = set()
 
 
 def render_public(slug, theme, lang):
@@ -161,7 +240,28 @@ def render_mine(slug, uid, theme, lang):
     merged = {k: [it for it in pub.get(k, []) if isinstance(it, dict) and it.get("id") not in dup] + mine[k] for k in ("places", "paths", "notes")}
     f = d / ".custom.json"
     atomic_write(f, json.dumps(merged, ensure_ascii=False))
-    pipeline.render(slug, theme, lang, d, custom=f)
+    pipeline.render(slug, theme, lang, d, custom=f, fonts=font_choice(uid, slug, theme, lang))
+
+
+HD_WIDTH = db.env_int("HD_WIDTH", 4000)
+
+
+def make_hd(svg, target):
+    """A large JPG of a render for zooming in on screen (the preview is only 1600 px wide)."""
+    import subprocess
+    from PIL import Image
+    from atlas.core import ENV
+    Image.MAX_IMAGE_PIXELS = None
+    tmp_png = target.with_name("." + target.name + ".png.tmp")
+    tmp = target.with_name("." + target.name + ".tmp")
+    try:
+        subprocess.run(["rsvg-convert", "-w", str(HD_WIDTH), "-o", str(tmp_png), str(svg)], check=True, env=ENV, timeout=240)
+        with Image.open(tmp_png) as im:
+            im.convert("RGB").save(tmp, "JPEG", quality=78, optimize=True, progressive=True)
+        os.replace(tmp, target)
+    finally:
+        for f in (tmp_png, tmp):
+            f.unlink(missing_ok=True)
 
 
 def refresh_public(slug):
@@ -181,7 +281,7 @@ def sidecar(slug, theme, lang, me, doc=None):
     if me:
         doc = doc if doc is not None else db.get_doc(me["id"], slug)
         cand = out_dir(slug, me["id"]) / f"{theme}.{lang}.json"
-        if doc_nonempty(doc) and cand.is_file():
+        if cand.is_file() and personal(me["id"], slug, theme, lang, doc):
             path, mine = cand, True
     if not path:
         path = out_dir(slug) / f"{theme}.{lang}.json"
@@ -501,6 +601,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/api/export/([^/]+)", path)
         if m:
             return self.export(m[1], q, me)
+        m = re.fullmatch(r"/api/fonts/([^/]+)", path)
+        if m:
+            return self.fonts_get(m[1], q, me)
         if path.startswith("/api/admin/"):
             return self.admin_get(path, q)
         raise ApiError(404, "not_found", "No such endpoint.")
@@ -524,12 +627,12 @@ class Handler(BaseHTTPRequestHandler):
     def export(self, slug, q, me):
         p = get_place(slug, me, need_ready=True)
         theme, lang, fmt, paper = q.get("theme", ""), q.get("lang", ""), q.get("fmt", ""), q.get("paper", "")
-        if not theme_ok(theme) or not LANG_RE.fullmatch(lang) or fmt not in ("png", "svg", "pdf", "jpg"):
+        if not theme_ok(theme) or not LANG_RE.fullmatch(lang) or fmt not in ("png", "svg", "pdf", "jpg", "hd"):
             raise ApiError(400, "bad_request", "theme, lang and fmt (png, svg, pdf, jpg) are required.")
         if paper and paper not in ("A4", "A3", "A2"):
             raise ApiError(400, "bad_paper", "paper must be A4, A3 or A2.")
         d = out_dir(slug)
-        if q.get("mine") == "1" and me and (out_dir(slug, me["id"]) / f"{theme}.{lang}.svg").is_file() and doc_nonempty(db.get_doc(me["id"], slug)):
+        if q.get("mine") == "1" and me and (out_dir(slug, me["id"]) / f"{theme}.{lang}.svg").is_file() and personal(me["id"], slug, theme, lang):
             d = out_dir(slug, me["id"])
         svg = d / f"{theme}.{lang}.svg"
         if not svg.is_file():
@@ -538,6 +641,11 @@ class Handler(BaseHTTPRequestHandler):
         if fmt in ("svg", "jpg"):
             return self.send_file(d / f"{theme}.{lang}.{fmt}", "no-cache", f"{name}.{fmt}")
         with EXPORTS_AT_ONCE, place_lock(f"x:{d}"):
+            if fmt == "hd":  # sharper copy for zooming in on screen
+                target = d / f"{theme}.{lang}.hd.jpg"
+                if not target.is_file() or target.stat().st_mtime < svg.stat().st_mtime:
+                    make_hd(svg, target)
+                return self.send_file(target, "private, max-age=86400")
             if fmt == "png":
                 target = d / f"{theme}.{lang}.print.png"
                 if not target.is_file() or target.stat().st_mtime < svg.stat().st_mtime:
@@ -553,6 +661,36 @@ class Handler(BaseHTTPRequestHandler):
                     make_pdf(svg, target, paper or None, fontconfig=ROOT / "fonts.conf")
         return self.send_file(target, "no-cache", f"{name}{'-' + paper if paper else ''}.{fmt}")
 
+    def fonts_get(self, slug, q, me):
+        p = get_place(slug, me, need_ready=True)
+        theme, lang = q.get("theme", ""), q.get("lang", "")
+        if not theme_ok(theme) or lang not in ("en", p["lang"]):
+            raise ApiError(400, "bad_request", "Unknown theme or language.")
+        return self.send_json(fonts_state(p["slug"], theme, lang, me))
+
+    def fonts_put(self, slug, body):
+        u = self.need_me()
+        p = get_place(slug, u, need_ready=True)
+        theme, lang, role, family = body.get("theme"), body.get("lang"), body.get("role"), body.get("family")
+        if not theme_ok(theme) or lang not in ("en", p["lang"]):
+            raise ApiError(400, "bad_request", "Unknown theme or language.")
+        if role not in studio.theme_font_roles(theme, lang):
+            raise ApiError(400, "bad_request", "Unknown text role.")
+        if family is not None and family not in {f["family"] for f in families()}:
+            raise ApiError(400, "unknown_font", "That font is not available.")
+        prefs = db.get_fonts(u["id"], p["slug"])
+        if not isinstance(prefs.get(lang), dict):
+            prefs[lang] = {}
+        per = prefs[lang]
+        th = per.get(theme) if isinstance(per.get(theme), dict) else {}
+        th.pop(role, None)
+        if family is not None:
+            th[role] = family
+        per[theme] = th
+        prefs = {l: {t: r for t, r in ts.items() if r} for l, ts in prefs.items() if isinstance(ts, dict)}
+        db.put_fonts(u["id"], p["slug"], {l: ts for l, ts in prefs.items() if ts})
+        return self.send_json(fonts_state(p["slug"], theme, lang, u))
+
     # -- POST / PUT / DELETE
     def route_write(self):
         self.check_origin()
@@ -567,6 +705,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.create_place(body)
         if path == "/api/render":
             return self.request_render(body)
+        m = re.fullmatch(r"/api/fonts/([^/]+)", path)
+        if m and self.command == "PUT":
+            return self.fonts_put(m[1], body)
         m = re.fullmatch(r"/api/custom/([^/]+)", path)
         if m and self.command == "PUT":
             u = self.need_me()
@@ -641,7 +782,7 @@ class Handler(BaseHTTPRequestHandler):
         if not theme_ok(theme) or lang not in ("en", p["lang"]):
             raise ApiError(400, "bad_request", "Unknown theme or language.")
         doc = db.get_doc(me["id"], slug) if me else None
-        if doc and doc_nonempty(doc):
+        if me and personal(me["id"], slug, theme, lang, doc):
             key = f"u{me['id']}"
             if not me["is_admin"] and not db.take(key, "bake", BAKES_PER_DAY):
                 raise ApiError(429, "quota", f"You can redraw {BAKES_PER_DAY} times a day. Try again tomorrow.")
@@ -877,6 +1018,7 @@ def main():
     jobs.start()
     seed_places()
     resume_unfinished()
+    threading.Thread(target=backfill_landmarks, daemon=True).start()
     threading.Thread(target=housekeeping, daemon=True).start()
     ThreadingHTTPServer.daemon_threads = True
     ThreadingHTTPServer.request_queue_size = 64

@@ -111,10 +111,12 @@ def fetch_place(slug, place):
         raise PlaceError("Elevation data could not be downloaded: " + (proc.stderr or proc.stdout)[-400:])
 
 
-def render(slug, theme, lang, out_dir, custom=None, thumb=False, width=1600, timeout=300):
+def render(slug, theme, lang, out_dir, custom=None, thumb=False, width=1600, timeout=300, fonts=None):
     cmd = [sys.executable, str(ROOT / "webapp" / "render_job.py"), slug, theme, lang, str(out_dir), "--width", str(width)]
     if custom:
         cmd += ["--custom", str(custom)]
+    if fonts:
+        cmd += ["--fonts", json.dumps(fonts, ensure_ascii=False)]
     if thumb:
         cmd.append("--thumb")
 

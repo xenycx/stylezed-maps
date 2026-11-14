@@ -60,6 +60,12 @@ CREATE TABLE IF NOT EXISTS submissions (
 );
 CREATE INDEX IF NOT EXISTS subs_status ON submissions(status, created);
 CREATE INDEX IF NOT EXISTS subs_user ON submissions(user_id, slug);
+CREATE TABLE IF NOT EXISTS user_fonts (  -- a visitor's own font choices: {lang: {theme: {role: family}}}
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  slug TEXT NOT NULL REFERENCES places(slug) ON DELETE CASCADE,
+  prefs TEXT NOT NULL,
+  PRIMARY KEY (user_id, slug)
+);
 CREATE TABLE IF NOT EXISTS usage (
   key TEXT NOT NULL,               -- 'u<id>' or 'ip:<addr>'
   day TEXT NOT NULL,
@@ -178,6 +184,25 @@ def put_doc(uid, slug, doc):
     run("INSERT INTO docs(user_id, slug, doc, updated) VALUES(?,?,?,?) "
         "ON CONFLICT(user_id, slug) DO UPDATE SET doc=excluded.doc, updated=excluded.updated",
         uid, slug, json.dumps(doc, ensure_ascii=False), time.time())
+
+
+# ---------------------------------------------------------------- font choices
+
+def get_fonts(uid, slug):
+    r = one("SELECT prefs FROM user_fonts WHERE user_id=? AND slug=?", uid, slug)
+    try:
+        prefs = json.loads(r["prefs"]) if r else {}
+    except ValueError:
+        prefs = {}
+    return prefs if isinstance(prefs, dict) else {}
+
+
+def put_fonts(uid, slug, prefs):
+    if prefs:
+        run("INSERT INTO user_fonts(user_id, slug, prefs) VALUES(?,?,?) "
+            "ON CONFLICT(user_id, slug) DO UPDATE SET prefs=excluded.prefs", uid, slug, json.dumps(prefs, ensure_ascii=False))
+    else:
+        run("DELETE FROM user_fonts WHERE user_id=? AND slug=?", uid, slug)
 
 
 def env_int(name, default):

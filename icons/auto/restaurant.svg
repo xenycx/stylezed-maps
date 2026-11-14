@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<path class="ink" d="M8.5 16v10M5 16v6.5q0 3.5 3.5 3.5T12 22.5V16M8.5 26v33"/>
+<path class="tone ink" d="M57 16q-5.5 6-5.5 16 0 5 5.5 6Z"/>
+<path class="ink" d="M57 38v21"/>
+<circle class="paper ink" cx="32" cy="40" r="17"/>
+<circle class="ink thin" cx="32" cy="40" r="11.5"/>
+<path class="accent ink thin" d="M32 31.5q1.2 2.3 3.2 3.2 5 2.3 5 6.8 0 4-8.2 4t-8.2-4q0-4.5 5-6.8 2-.9 3.2-3.2Z"/>
+<path class="ink thin" d="M32 35.5v5M28.5 37l-1.5 4M35.5 37l1.5 4"/>
+</svg>
