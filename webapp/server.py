@@ -468,7 +468,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(404, "not_found", "Not found.")
         head = parts[0]
         if head == "web":
-            base, cache = WEB, "public, max-age=300"
+            base, cache = WEB, "no-cache"  # revalidate (cheap 304s): a deploy must reach every browser at once
             target = WEB.joinpath(*parts[1:])
         elif head == "fonts":
             base, cache = ROOT / "fonts", "public, max-age=604800"
