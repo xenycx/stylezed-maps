@@ -1,0 +1,63 @@
+{
+  "query": "Sarpi, Georgia",
+  "display_name": "Sarpi, Khelvachauri Municipality, Autonomous Republic of Adjara, Georgia",
+  "lat": 41.5218985,
+  "lon": 41.5489175,
+  "center_lat": 41.5222409,
+  "center_lon": 41.54906925,
+  "landmarks": [
+    {
+      "name": "Sarpi",
+      "lat": 41.5218985,
+      "lon": 41.5489175,
+      "is_place": true,
+      "dx": 0.0,
+      "dy": 0.0,
+      "dist": 0.0
+    },
+    {
+      "name": "Lazetian Ethnographic Museum",
+      "lat": 41.521977,
+      "lon": 41.5493173,
+      "is_place": false,
+      "dx": 33.32155189504341,
+      "dy": 8.738620000084438,
+      "dist": 34.44835700291012
+    },
+    {
+      "name": "St. Saint Andrew the First Orthodox Cathedral in Sarpi",
+      "lat": 41.5225833,
+      "lon": 41.5488212,
+      "is_place": false,
+      "dx": -8.02617670737705,
+      "dy": 76.23193600021466,
+      "dist": 76.6532946381228
+    },
+    {
+      "name": "Sarp",
+      "lat": 41.5162488,
+      "lon": 41.5493823,
+      "is_place": true,
+      "dx": 38.73901280843192,
+      "dy": -628.9246039999236,
+      "dist": 630.1165516234537
+    }
+  ],
+  "radius": 1500,
+  "bbox": [
+    41.50876623237514,
+    41.53107179372777,
+    41.53571556762486,
+    41.567066706272236
+  ],
+  "fetch_bbox": [
+    41.50539756546892,
+    41.52657242965971,
+    41.53908423453108,
+    41.571566070340296
+  ],
+  "name": "Sarpi",
+  "name_local": "სარფი",
+  "lang": "ka",
+  "display_name_local": "სარფი, ხელვაჩაურის მუნიციპალიტეტი, აჭარის ავტონომიური რესპუბლიკა, საქართველო"
+}

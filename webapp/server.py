@@ -826,6 +826,26 @@ class Handler(BaseHTTPRequestHandler):
     do_DELETE = do_POST
 
 
+def seed_places():
+    """Maps shipped inside the image (seed/<slug>/, made by site_export.py from the project's own places):
+    added to the site once, on the first start that sees them. Data is already fetched, so only drawing runs."""
+    for src in sorted((ROOT / "seed").glob("*/meta.json")):
+        slug = src.parent.name
+        if not SLUG_RE.fullmatch(slug) or db.one("SELECT 1 FROM places WHERE slug=?", slug):
+            continue
+        dest = ROOT / "data" / slug
+        if not (dest / "dem.npy").is_file():
+            shutil.copytree(src.parent, dest, dirs_exist_ok=True)
+        m = read_json(src)
+        radius = float(m.get("radius") or 1400)
+        size = min(pipeline.SIZES, key=lambda k: abs(pipeline.SIZES[k] - radius))
+        now = time.time()
+        db.run("INSERT INTO places(slug, osm_type, osm_id, name, name_local, display_name, lang, size, radius, lat, lon, status, created_by, created, updated) "
+               "VALUES(?,NULL,NULL,?,?,?,?,?,?,?,?,'queued',NULL,?,?)", slug, m.get("name") or slug, m.get("name_local"),
+               m.get("display_name_local") if m.get("lang") != "en" and m.get("display_name_local") else m.get("display_name", ""),
+               m.get("lang") or "en", size, radius, m.get("center_lat", m["lat"]), m.get("center_lon", m["lon"]), now, now)
+
+
 def resume_unfinished():
     for p in db.all_("SELECT slug FROM places WHERE status IN ('queued', 'fetching', 'rendering')"):
         try:
@@ -855,6 +875,7 @@ def main():
     db.init(Path(os.environ.get("DB_PATH") or data_dir / "site.db"))
     auth.setup(data_dir)
     jobs.start()
+    seed_places()
     resume_unfinished()
     threading.Thread(target=housekeeping, daemon=True).start()
     ThreadingHTTPServer.daemon_threads = True

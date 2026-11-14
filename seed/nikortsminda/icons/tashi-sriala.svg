@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<path class="tone ink" d="M6 59V47C16 43 22 33 30 24 37 16 46 11 58 12V59Z"/>
+<path class="paper ink" d="M52 13.500C42 17 39 25 34 31 28 38 19 41 13 51L11 58H19L21 54C25 47 34 44 40 37 45 31 47 23 57 19Z"/>
+<path class="ink thin" d="M54 16.500C45 20 43 27 37 34 31 41 22 44 16.500 53L15 58"/>
+<polygon class="shade ink thin" points="48,31 54,45 42,45"/>
+<polygon class="shade ink thin" points="50,41 57,57 43,57"/>
+<path class="ink thin" d="M50 57v2"/>
+<polygon class="shade ink thin" points="14,22 19,34 9,34"/>
+<path class="ink thin" d="M14 34v6"/>
+<path class="accent ink thin" d="M27.500 36.500c1.600-2.400 4.800-3 6.800-1.400 1.400 1.100 1.300 3-.2 4.300-1.800 1.600-4.600 1.900-6.100.6-1.200-1-1.300-2.300-.5-3.500Z"/>
+<circle class="solid" cx="35.500" cy="32.500" r="2.200"/>
+<path class="ink thin" d="M38.500 27.500l3-3.500M41.500 30l3.500-2.500"/>
+</svg>

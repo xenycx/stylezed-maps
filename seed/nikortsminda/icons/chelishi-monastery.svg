@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<polygon class="tone ink" points="5,59 6,31 10,23 12,11 20,6.5 26,10 29,19 34,23 37,35 40,59"/>
+<path class="ink thin" d="M12 11l3 8-4 9M26 10l-2 7 4 8M6 44l6 3"/>
+<path class="shade" d="M11 37v-3a2.5 2.5 0 0 1 5 0v3Z"/>
+<path class="shade" d="M20 29v-3a2.5 2.5 0 0 1 5 0v3Z"/>
+<polygon class="tone ink" points="27.5,49 30,44 38,44 38,49"/>
+<rect class="paper ink" x="29" y="49" width="9" height="10"/>
+<polygon class="paper ink" points="36,59 36,45.5 45.5,37 55,45.5 55,59"/>
+<polygon class="tone ink" points="33.5,46.5 45.5,34.5 57.5,46.5 55.5,48.6 45.5,38.8 35.5,48.6"/>
+<path class="ink" d="M45.5 34.5V26.5M42.8 29.3h5.4"/>
+<path class="accent" d="M42.5 59v-6a3 3 0 0 1 6 0v6Z"/>
+<circle class="shade" cx="45.5" cy="45" r="1.7"/>
+</svg>
