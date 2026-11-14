@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1917">
+<meta name="description" content="Illustrated, print-ready maps of real places, drawn from OpenStreetMap. Add your own places and paths and download a poster.">
+<title>Stylized Maps</title>
+<link rel="icon" href="/web/favicon.svg">
+<link rel="preload" href="/fonts/FiraGO-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/web/studio.css">
+<link rel="stylesheet" href="/web/site.css">
+</head>
+<body class="page">
+<header class="site-bar">
+  <a class="site-brand" href="/"><span class="site-mark" aria-hidden="true"></span><span data-i18n="app.title"></span></a>
+  <div class="site-bar-end">
+    <div class="seg ui-lang" role="radiogroup" data-i18n-aria="home.uiLang">
+      <button type="button" role="radio" data-ui="en" lang="en">EN</button>
+      <button type="button" role="radio" data-ui="ka" lang="ka">ქარ</button>
+    </div>
+    <div id="account" class="account"></div>
+  </div>
+</header>
+
+<main class="home">
+  <section class="hero">
+    <h1 data-i18n="home.title"></h1>
+    <p class="lead" data-i18n="home.lead"></p>
+
+    <form id="search" class="search" role="search" autocomplete="off">
+      <input id="q" name="q" type="search" required maxlength="200" data-i18n-ph="home.search.ph" data-i18n-aria="home.search.ph">
+      <button class="btn btn-primary" type="submit" data-i18n="home.search.go"></button>
+    </form>
+    <p id="search-msg" class="search-msg" role="status" hidden></p>
+
+    <div id="make" class="make" hidden>
+      <fieldset class="results">
+        <legend data-i18n="home.pick"></legend>
+        <div id="results"></div>
+      </fieldset>
+      <div class="make-opts">
+        <div class="opt">
+          <span class="opt-label" id="size-label" data-i18n="home.size"></span>
+          <div class="seg size-seg" role="radiogroup" aria-labelledby="size-label">
+            <button type="button" role="radio" data-size="s" data-i18n="home.size.s"></button>
+            <button type="button" role="radio" data-size="m" data-i18n="home.size.m"></button>
+            <button type="button" role="radio" data-size="l" data-i18n="home.size.l"></button>
+          </div>
+        </div>
+        <label class="opt">
+          <span class="opt-label" data-i18n="home.lang"></span>
+          <select id="map-lang"></select>
+        </label>
+      </div>
+      <div class="make-go">
+        <button id="go" class="btn btn-primary btn-big" type="button" data-i18n="home.make"></button>
+        <p id="make-note" class="make-note"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="gallery-wrap" aria-labelledby="gallery-title">
+    <div class="gallery-head">
+      <div class="tabs-inline" role="tablist">
+        <button type="button" role="tab" id="tab-all" aria-selected="true"><span id="gallery-title" data-i18n="home.gallery"></span></button>
+        <button type="button" role="tab" id="tab-mine" aria-selected="false" hidden><span data-i18n="home.mine"></span></button>
+      </div>
+      <input id="filter" type="search" maxlength="80" data-i18n-ph="home.filter.ph" data-i18n-aria="home.filter.ph">
+    </div>
+    <ul id="gallery" class="gallery" role="list"></ul>
+    <p id="gallery-empty" class="gallery-empty" hidden></p>
+    <div class="gallery-more"><button id="more" class="btn btn-quiet" type="button" hidden data-i18n="home.more"></button></div>
+  </section>
+</main>
+
+<footer class="site-foot"><p data-i18n="home.credit"></p></footer>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:2rem;color:#eee;font-family:sans-serif">This site needs JavaScript.</p></noscript>
+<script type="module" src="/web/js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+{
+  "name": "Storybook",
+  "description": "Hand-inked fantasy map on aged parchment: drawn trees and little houses, hachured hills, ribbon title, compass rose.",
+  "name_local": "ზღაპრული",
+  "description_local": "ხელით დახატული ზღაპრული რუკა ძველ პერგამენტზე: ხეები, პატარა სახლები, დაშტრიხული ფერდობები, ლენტი სათაურით და კომპასი.",
+  "seed": 11,
+  "palette": {
+    "paper": "#ecdcb4", "paper_light": "#f5e9cb", "ink": "#3a2917", "ink_soft": "#6b5236",
+    "forest": "#9fae6e", "forest_dark": "#6c7e42", "pine": "#7d9160", "pine_dark": "#4f6540",
+    "meadow": "#dcd79c", "field": "#ead9a6", "field_line": "#b89b5e", "orchard": "#c9cf8a",
+    "village": "#eedfba", "water": "#a7c8c4", "water_dark": "#3f7480", "road": "#f3e6c4",
+    "roof1": "#a8452d", "roof2": "#bd6238", "roof3": "#8c3a2a", "roof4": "#c58a4c", "wall": "#f6ecd4",
+    "accent": "#a3271f", "gold": "#c4922b"
+  },
+  "fonts": {
+    "display": { "en": "Uncial Antiqua", "ka": { "font": "Noto Serif Georgian", "weight": "bold", "scale": 0.92 } },
+    "text": { "en": "IM FELL English", "ka": { "font": "Noto Serif Georgian", "scale": 0.9 } },
+    "italic": { "en": { "font": "IM FELL English", "style": "italic" }, "ka": { "font": "Noto Serif Georgian", "style": "italic", "scale": 0.9 } },
+    "caps": { "en": "IM FELL English SC", "ka": { "font": "Noto Serif Georgian", "scale": 0.86 } }
+  },
+  "page": {
+    "width": 300, "height": 400, "margin": 13, "frame": ["m + 2", "m + 2", "W - 2*m - 4", "306"],
+    "bg": "$paper", "map_bg": "$paper_light",
+    "texture": { "tint": "#5e3f1c", "grain": 0.05, "mottle": 0.11, "fibers": 0.05, "stains": 3, "vignette": 0.34, "edge_wear": 0.3 }
+  },
+  "order": ["landcover", "hillshade", "hachures", "water", "waterways", "ground", "tracks", "paths", "roads", "bridges", "buildings", "trees", "peaks"],
+  "relief": {
+    "hillshade": { "shadow": "#5a3c1c", "shadow_opacity": 0.3, "light": "#fff8e0", "light_opacity": 0.25, "exaggeration": 1.5 },
+    "hachures": { "spacing": 1.25, "min_slope": 0.2, "max_slope": 0.8, "length": [0.6, 1.7], "width": [0.09, 0.26], "color": "$ink_soft",
+                  "opacity": 0.8, "avoid": ["water", "buildings", "roads"] },
+    "peaks": { "count": 5, "min_distance": 30, "glyph": "mountain", "size": [6, 9],
+               "style": { "ink": "$ink", "fill": "$paper_light", "shade": "$ink_soft", "sw": 0.05 },
+               "label": { "font": "@italic", "size": 2.3, "color": "$ink", "halo": "$paper_light", "halo_width": 0.7 } }
+  },
+  "layers": {
+    "landcover": {
+      "residential": { "fill": "$village", "wobble": 0.45 },
+      "farmland": { "fill": "$field", "wobble": 0.45, "hatch": { "angle": "auto", "gap": 1.1, "color": "$field_line", "width": 0.09, "opacity": 0.7, "wobble": 0.08, "angle_jitter": 8 } },
+      "meadow": { "fill": "$meadow", "wobble": 0.45 }, "grass": { "fill": "$meadow", "wobble": 0.45 }, "grassland": { "fill": "$meadow", "wobble": 0.45 },
+      "heath": { "fill": "$meadow", "wobble": 0.45 },
+      "orchard": { "fill": "$orchard", "wobble": 0.45 }, "vineyard": { "fill": "$orchard", "wobble": 0.45 },
+      "scrub": { "fill": "$meadow", "wobble": 0.45 },
+      "wood": { "fill": "$forest", "fill_opacity": 0.55, "wobble": 0.45, "edge": { "stroke": "$forest_dark", "width": 0.25, "opacity": 0.7, "wobble": 0.25 } },
+      "cemetery": { "fill": "$village", "edge": { "stroke": "$ink_soft", "width": 0.15, "dash": "0.5 0.5" } },
+      "religious": { "fill": "$village" }
+    },
+    "water": { "sea": { "fill": "$water", "stroke": "$water_dark", "width": 0.4, "wobble": 0.2,
+                        "shorelines": { "count": 5, "gap": 0.8, "color": "$water_dark", "width": 0.14, "opacity": 0.8, "wobble": 0.1 } },
+               "*": { "fill": "$water", "stroke": "$water_dark", "width": 0.35, "wobble": 0.25,
+                      "shorelines": { "count": 3, "gap": 0.7, "color": "$water_dark", "width": 0.13, "opacity": 0.75, "wobble": 0.08 } } },
+    "waterways": {
+      "river": { "stroke": "$water", "width": 1.3, "casing": { "color": "$water_dark", "width": 1.8 }, "wobble": 0.1,
+                 "inner": { "stroke": "$water_dark", "width": 0.12, "dash": "1.6 1.4", "opacity": 0.7 } },
+      "stream": { "stroke": "$water_dark", "width": 0.38, "wobble": 0.12 },
+      "*": { "stroke": "$water_dark", "width": 0.3, "wobble": 0.1 }
+    },
+    "tracks": { "*": { "stroke": "$ink_soft", "width": 0.28, "dash": "1.3 0.8", "wobble": 0.08 } },
+    "paths": { "*": { "stroke": "$accent", "width": 0.32, "dash": "0.05 0.85", "wobble": 0.05 } },
+    "roads": {
+      "major": { "stroke": "$road", "width": 1.15, "casing": { "color": "$ink", "width": 1.65 }, "wobble": 0.1 },
+      "minor": { "stroke": "$road", "width": 0.6, "casing": { "color": "$ink_soft", "width": 0.95 }, "wobble": 0.08 }
+    },
+    "buildings": { "*": { "glyph": "house", "size": [1.9, 2.5], "min_gap": 1.5, "roofs": ["$roof1", "$roof2", "$roof3", "$roof4"],
+                          "style": { "ink": "$ink", "fill": "$wall", "sw": 0.075 } } }
+  },
+  "bridges": { "size": 2.0, "gap": 0.95, "stroke": "$ink", "width": 0.28, "deck": "$road" },
+  "scatter": [
+    { "layer": "ground", "on": ["meadow", "grass", "grassland", "heath", "scrub"], "glyph": "grass", "spacing": 3.4, "jitter": 0.5, "size": [0.9, 1.3],
+      "style": { "ink": "$forest_dark", "sw": 0.1 }, "avoid": ["roads", "buildings", "water", "landmarks", "decor"], "avoid_dist": 0.5 },
+    { "layer": "ground", "on": "farmland", "glyph": "haystack", "spacing": 13, "jitter": 0.5, "size": [1.9, 2.4], "inset": 1.5,
+      "style": { "ink": "$ink", "fill": "$gold", "shade": "$ink_soft", "sw": 0.07 }, "avoid": ["roads", "buildings", "water", "wood", "landmarks", "decor"], "avoid_dist": 1.2 },
+    { "layer": "ground", "on": "open", "glyph": ["cow", "sheep"], "weights": [2, 1], "count": 14, "size": [2.0, 2.5], "slope": [0, 0.22],
+      "style": { "ink": "$ink", "fill": "$paper_light", "shade": "$ink_soft", "sw": 0.07 }, "avoid": ["roads", "buildings", "water", "wood", "farmland", "residential", "landmarks", "decor"], "avoid_dist": 2 },
+    { "layer": "ground", "on": "cemetery", "glyph": "grave", "spacing": 1.6, "jitter": 0.25, "size": [1.0, 1.3], "flip": false,
+      "style": { "ink": "$ink", "sw": 0.11 } },
+    { "layer": "ground", "on": "lake", "glyph": "reed", "spacing": 1.6, "jitter": 0.4, "size": [1.3, 1.8], "inset": -0.6, "band": 0.9, "avoid": ["roads"],
+      "style": { "ink": "$forest_dark", "fill": "$ink_soft", "sw": 0.09 }, "clump": 0.62 },
+    { "layer": "ground", "on": "sea", "glyph": "wave", "spacing": 5.5, "jitter": 0.5, "size": [1.6, 2.4], "inset": 2.5, "clump": 0.35, "flip": false,
+      "style": { "ink": "$water_dark", "sw": 0.09 }, "avoid": ["decor", "landmarks"] },
+    { "layer": "trees", "on": "sea", "glyph": "sailboat", "count": 3, "size": [5.5, 7.5], "inset": 9,
+      "style": { "ink": "$ink", "fill": "$paper_light", "shade": "#b08a5a", "accent": "$accent", "sw": 0.05 }, "avoid": ["decor", "landmarks"], "avoid_dist": 4 },
+    { "layer": "trees", "on": "lake", "glyph": "rowboat", "count": 1, "size": [3.2, 3.6], "inset": 2.2, "min_area": 40,
+      "style": { "ink": "$ink", "fill": "$paper_light", "shade": "$ink_soft", "sw": 0.06 } },
+    { "layer": "trees", "on": "frame", "glyph": "rock", "spacing": 2.6, "jitter": 0.5, "size": [1.1, 1.9], "slope": [0.62, 9],
+      "style": { "ink": "$ink", "fill": "$paper", "shade": "$ink_soft", "sw": 0.08 }, "avoid": ["roads", "buildings", "water", "landmarks", "decor"], "avoid_dist": 0.8, "clump": 0.4 },
+    { "layer": "trees", "on": ["orchard", "vineyard"], "glyph": "round", "spacing": 2.3, "jitter": 0.12, "size": [1.5, 1.8],
+      "style": { "ink": "$ink", "fill": "$forest", "shade": "$forest_dark", "sw": 0.06 }, "avoid": ["roads", "buildings", "landmarks", "decor"] },
+    { "layer": "trees", "on": "wood", "glyph": ["round", "conifer", "poplar"], "weights": [5, 2, 1], "spacing": 2.5, "jitter": 0.42, "size": [2.5, 3.5], "elev": [0, 1380],
+      "style": { "ink": "$ink", "fill": "$forest", "shade": "$forest_dark", "sw": 0.055 }, "avoid": ["roads", "buildings", "water", "landmarks", "decor"], "avoid_dist": 0.5, "legend": "wood" },
+    { "layer": "trees", "on": "wood", "glyph": ["conifer", "round"], "weights": [5, 1], "spacing": 2.4, "jitter": 0.42, "size": [2.7, 3.7], "elev": [1380, 9000],
+      "style": { "ink": "$ink", "fill": "$pine", "shade": "$pine_dark", "sw": 0.055 }, "avoid": ["roads", "buildings", "water", "landmarks", "decor"], "avoid_dist": 0.5 },
+    { "layer": "trees", "on": "residential", "glyph": ["round", "poplar"], "weights": [3, 1], "spacing": 5.5, "jitter": 0.5, "size": [2.0, 2.8], "clump": 0.45,
+      "style": { "ink": "$ink", "fill": "$forest", "shade": "$forest_dark", "sw": 0.06 }, "avoid": ["roads", "buildings", "water", "landmarks", "decor"], "avoid_dist": 1.0 },
+    { "layer": "sky", "on": "frame", "glyph": "bird", "count": 5, "size": [1.3, 1.9], "flock": { "n": [3, 6], "spread": 4 }, "inset": 12,
+      "style": { "ink": "$ink", "sw": 0.1 }, "avoid": ["landmarks", "decor", "buildings"], "avoid_dist": 3 }
+  ],
+  "symbols": {
+    "spring": { "shape": "drop", "size": 2.0, "color": "$water_dark", "fill": "$water", "width": 0.25, "legend": "spring", "priority": 2 },
+    "drinking_water": { "shape": "drop", "size": 1.3, "color": "$water_dark", "fill": "$paper_light", "width": 0.2, "legend": "drinking_water", "priority": 8 }
+  },
+  "landmarks": {
+    "sizes": [17, 12.5, 8.5], "ink": "$ink", "paper": "$paper_light", "tone": "#d8bd8c", "shade": "#7a5a3a", "accent": "$accent",
+    "stroke": 2.0, "halo": "$paper_light", "halo_width": 6,
+    "shadow": { "color": "$ink", "opacity": 0.18 },
+    "leader": { "stroke": "$ink", "width": 0.22, "dash": "0.6 0.5", "dot": 0.5 },
+    "pin": { "r": 1.6, "fill": "$accent", "stroke": "$paper_light", "font": { "font": "@text", "size": 2.1, "color": "$paper_light", "weight": "bold" } },
+    "label": { "font": "@caps", "color": "$ink", "halo": "$paper_light", "halo_width": 0.9 },
+    "label_sizes": [3.5, 2.8, 2.2], "label_width": 30,
+    "label_hero": { "color": "$accent" }
+  },
+  "custom": {
+    "path": { "stroke": "$accent", "width": 0.75, "dash": "1.8 1.1", "casing": { "color": "$paper_light", "width": 1.5, "opacity": 0.8 } },
+    "path_label": { "font": "@italic", "size": 2.6, "color": "$accent", "halo": "$paper_light", "halo_width": 0.8 },
+    "place_size": 9,
+    "label": { "font": "@italic", "size": 2.6, "color": "$ink", "halo": "$paper_light", "halo_width": 0.8 },
+    "note": { "font": "@italic", "size": 2.5, "color": "$accent", "halo": "$paper_light", "halo_width": 0.8 }
+  },
+  "labels": {
+    "place": { "font": "@display", "size": 6.2, "color": "$ink", "halo": "$paper_light", "halo_width": 1.4, "ls": 0.3 },
+    "place_minor": { "font": "@display", "size": 4.2, "color": "$ink", "halo": "$paper_light", "halo_width": 1.1, "ls": 0.2 },
+    "poi": { "font": "@italic", "size": 2.3, "color": "$ink", "halo": "$paper_light", "halo_width": 0.7 },
+    "water": { "font": "@italic", "size": 3.0, "color": "$water_dark", "halo": "$paper_light", "halo_width": 0.7, "spread": 4.2 }
+  },
+  "decorations": {
+    "frame": { "style": "double", "color": "$ink", "width": 0.45, "gap": 1.5, "outer_width": 1.0, "wobble": 0.06, "corners": { "size": 9, "inset": 2, "width": 0.35 } },
+    "title": { "on_map": true, "style": "ribbon", "x": "mx", "y": "fy + 15", "anchor": "middle", "clear": 3,
+               "font": { "font": "@display", "size": 9.5, "color": "$ink", "ls": 0.5 },
+               "ribbon": { "ink": "$ink", "fill": "$paper", "shade": "#c9b383", "sw": 0.4 },
+               "sub": [ { "text": "{region}", "font": "@italic", "size": 3.1, "color": "$ink", "halo": "$paper_light", "halo_width": 0.9 } ] },
+    "compass": { "on_map": true, "x": "fr - 21", "y": "fb - 23", "size": 13, "style": "rose16", "ink": "$ink", "fill": "$paper_light", "accent": "$accent",
+                 "font": { "font": "@display", "size": 4, "color": "$ink", "halo": "$paper_light", "halo_width": 0.9 } },
+    "scalebar": { "on_map": true, "x": "fx + 9", "y": "fb - 9", "style": "bar", "segments": 4, "h": 1.2, "color": "$ink", "alt": "$paper_light",
+                  "font": { "font": "@italic", "size": 2.4, "color": "$ink", "halo": "$paper_light", "halo_width": 0.7 } },
+    "index": { "x": "fx + 2", "y": "fb + 19", "columns": 3, "col_width": 57, "row": 9.2, "icon": 8,
+               "font": { "font": "@text", "size": 2.7, "color": "$ink" },
+               "title_font": { "font": "@display", "size": 3.6, "color": "$accent", "ls": 0.3 } },
+    "legend": { "x": "fx + 181", "y": "fb + 19", "columns": 2, "col_width": 45, "gap": 5.1, "swatch": 8,
+                "font": { "font": "@text", "size": 2.5, "color": "$ink" },
+                "title_font": { "font": "@display", "size": 3.6, "color": "$accent", "ls": 0.3 } },
+    "texts": [
+      { "x": "cx", "y": "H - 9.5", "anchor": "middle", "font": "@italic", "size": 2.2, "color": "$ink_soft",
+        "lines": ["elevation"] }
+    ],
+    "attribution": { "x": "cx", "y": "H - 6", "anchor": "middle", "font": "@text", "size": 1.8, "color": "$ink_soft" }
+  }
+}

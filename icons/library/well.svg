@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<path class="ink" d="M18.5 39V23M45.5 39V23M18.5 28.5h27"/>
+<path class="ink thin" d="M32 28.5v4.5"/>
+<path class="accent ink" d="M28.5 33h7l-1 6h-5Z"/>
+<polygon class="tone ink" points="11,23 32,8.5 53,23"/>
+<rect class="tone ink" x="16" y="44.5" width="32" height="14.5"/>
+<path class="ink thin" d="M16 51.5h32M24 44.5v7M32 51.5V59M40 44.5v7"/>
+<rect class="paper ink" x="13" y="39" width="38" height="5.5" rx="2"/>
+</svg>

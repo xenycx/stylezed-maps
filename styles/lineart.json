@@ -1,0 +1,78 @@
+{
+  "name": "Line Art",
+  "description": "Modern minimal print: one deep ink on warm white, the land drawn by contour lines, a single vermilion accent.",
+  "name_local": "ხაზოვანი",
+  "description_local": "თანამედროვე მინიმალისტური ნამუშევარი: ერთი მუქი მელანი თბილ თეთრ ქაღალდზე, რელიეფი ჰორიზონტალებით და ერთი წითელი აქცენტი.",
+  "seed": 3,
+  "palette": { "paper": "#f4f0e6", "ink": "#18242f", "ink_soft": "#5d6a74", "faint": "#aeb6ba", "accent": "#e2512b", "wash": "#e7e1d2", "water": "#3f7391" },
+  "fonts": {
+    "display": { "en": "Space Grotesk", "ka": "Noto Sans Georgian" },
+    "text": { "en": "Space Grotesk", "ka": "FiraGO" }
+  },
+  "page": { "width": 300, "height": 400, "margin": 20, "frame": ["m", "m", "W - 2*m", "282"], "bg": "$paper", "map_bg": "$paper",
+            "texture": { "tint": "#5a5140", "grain": 0.035, "mottle": 0.02, "fibers": 0.0, "vignette": 0.0 } },
+  "order": ["landcover", "contours", "water", "waterways", "ground", "tracks", "paths", "roads", "bridges", "buildings", "trees"],
+  "relief": {
+    "contours": { "color": "$ink", "width": 0.07, "index_width": 0.2, "opacity": 0.5, "every": 10, "index_every": 50 }
+  },
+  "layers": {
+    "landcover": {
+      "wood": { "hatch": { "angle": 38, "gap": 0.75, "color": "$ink", "width": 0.07, "opacity": 0.55, "gap_jitter": 0, "inset": 0.1, "min_area": 1 } },
+      "farmland": { "hatch": { "angle": "auto", "gap": 1.6, "color": "$ink", "width": 0.05, "opacity": 0.35, "dash": "0.3 0.5", "min_area": 6 } },
+      "cemetery": { "edge": { "stroke": "$ink_soft", "width": 0.12, "dash": "0.4 0.4" } }
+    },
+    "water": { "*": { "fill": "$water", "shorelines": { "count": 2, "gap": 0.5, "color": "$paper", "width": 0.12, "opacity": 0.8 } } },
+    "waterways": { "river": { "stroke": "$water", "width": 1.2 }, "stream": { "stroke": "$water", "width": 0.3 }, "*": { "stroke": "$water", "width": 0.25 } },
+    "tracks": { "*": { "stroke": "$ink", "width": 0.22, "dash": "0.9 0.7", "linecap": "butt", "casing": { "color": "$paper", "width": 0.7 } } },
+    "paths": { "*": { "stroke": "$accent", "width": 0.32, "dash": "0.05 0.8", "casing": { "color": "$paper", "width": 0.8 } } },
+    "roads": { "major": { "stroke": "$ink", "width": 1.0, "casing": { "color": "$paper", "width": 1.7 } },
+               "minor": { "stroke": "$ink", "width": 0.4, "casing": { "color": "$paper", "width": 0.95 } } },
+    "buildings": { "*": { "fill": "$ink", "stroke": "$paper", "width": 0.1 } }
+  },
+  "bridges": { "size": 1.6, "gap": 0.85, "stroke": "$ink", "width": 0.2 },
+  "scatter": [
+    { "layer": "ground", "on": "cemetery", "glyph": "grave", "spacing": 1.7, "jitter": 0.2, "size": [0.9, 1.1], "flip": false, "style": { "ink": "$ink", "sw": 0.1 } },
+    { "layer": "trees", "on": "frame", "glyph": "rock", "spacing": 2.6, "jitter": 0.5, "size": [0.9, 1.4], "slope": [0.65, 9], "clump": 0.4,
+      "style": { "ink": "$ink", "fill": "$paper", "sw": 0.09 }, "avoid": ["roads", "buildings", "water", "landmarks"], "avoid_dist": 0.8 },
+    { "layer": "trees", "on": "water", "glyph": "rowboat", "count": 1, "size": [3.0, 3.2], "inset": 2.2, "min_area": 40, "style": { "ink": "$paper", "fill": "$ink", "sw": 0.07 } }
+  ],
+  "symbols": {
+    "spring": { "shape": "circle", "size": 1.5, "color": "$ink", "fill": "$paper", "width": 0.3, "legend": "spring", "priority": 2 },
+    "drinking_water": { "shape": "dot", "size": 0.8, "color": "$accent", "legend": "drinking_water", "priority": 8 }
+  },
+  "landmarks": {
+    "sizes": [15, 11, 7.5], "ink": "$ink", "paper": "$paper", "tone": "$wash", "shade": "$ink", "accent": "$accent", "stroke": 2.4,
+    "halo": "$paper", "halo_width": 8,
+    "leader": { "stroke": "$ink", "width": 0.18, "dot": 0.55 },
+    "pin": { "r": 1.5, "fill": "$accent", "stroke": "$paper", "font": { "font": "@text", "size": 2, "color": "$paper", "weight": "bold" } },
+    "label": { "font": "@text", "color": "$ink", "weight": "bold", "halo": "$paper", "halo_width": 0.9 },
+    "label_sizes": [2.8, 2.3, 1.9], "label_width": 28, "label_hero": { "color": "$accent" }
+  },
+  "custom": {
+    "path": { "stroke": "$accent", "width": 0.9, "casing": { "color": "$paper", "width": 1.7 } },
+    "path_label": { "font": "@text", "size": 2.3, "color": "$accent", "weight": "bold", "halo": "$paper", "halo_width": 0.9 },
+    "place_size": 8.5,
+    "label": { "font": "@text", "size": 2.2, "color": "$ink", "weight": "bold", "halo": "$paper", "halo_width": 0.9 },
+    "note": { "font": "@text", "size": 2.2, "color": "$accent", "halo": "$paper", "halo_width": 0.9 }
+  },
+  "labels": {
+    "place": { "font": "@display", "size": 4.6, "color": "$ink", "weight": "bold", "halo": "$paper", "halo_width": 1.3, "upper": true, "ls": 1.2 },
+    "place_minor": { "font": "@display", "size": 3.1, "color": "$ink", "weight": "bold", "halo": "$paper", "halo_width": 1.0, "upper": true, "ls": 0.9 },
+    "poi": { "font": "@text", "size": 2.0, "color": "$ink", "halo": "$paper", "halo_width": 0.7 },
+    "water": { "font": "@text", "size": 2.3, "color": "$ink", "halo": "$paper", "halo_width": 0.8, "spread": 4.5 }
+  },
+  "decorations": {
+    "frame": { "color": "$ink", "width": 0.5 },
+    "title": { "x": "m", "y": "fb + 21", "anchor": "start",
+               "font": { "font": "@display", "size": 17, "color": "$ink", "weight": "bold", "upper": true, "ls": 0.6 },
+               "sub": [ { "text": "{region}", "font": "@text", "size": 3.4, "color": "$ink_soft" },
+                        { "text": "{lat}° N   {lon}° E   ·   {elev_min}–{elev_max} {m}", "font": "@text", "size": 3.0, "color": "$accent", "ls": 0.3 } ] },
+    "index": { "x": "m", "y": "fb + 58", "columns": 4, "col_width": 49, "row": 7.4, "icon": 6.4, "title": false, "max": 12,
+               "font": { "font": "@text", "size": 2.1, "color": "$ink" } },
+    "scalebar": { "x": "fr - 62", "y": "fb + 13", "style": "line", "segments": 4, "h": 1.2, "width": 0.3, "color": "$ink", "fraction": 0.2,
+                  "font": { "font": "@text", "size": 2.2, "color": "$ink" } },
+    "compass": { "x": "fr - 4", "y": "fb + 20", "size": 5.5, "style": "arrow", "ink": "$ink", "fill": "$paper",
+                 "font": { "font": "@display", "size": 2.8, "color": "$ink", "weight": "bold" } },
+    "attribution": { "x": "m", "y": "H - 7", "anchor": "start", "font": "@text", "size": 1.8, "color": "$ink_soft" }
+  }
+}

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1b1917">
+<title>Stylized Maps</title>
+<link rel="icon" href="/web/favicon.svg">
+<link rel="preload" href="/fonts/FiraGO-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/web/studio.css">
+<link rel="stylesheet" href="/web/site.css">
+</head>
+<body>
+<div id="app" data-panel="open" data-tool="select">
+
+  <header id="topbar">
+    <div class="tb-group tb-pickers">
+      <span class="brand" aria-hidden="true"></span>
+      <a id="pick-place" class="picker picker-home" href="/" data-tip="site.home"></a>
+      <button type="button" id="pick-theme" class="picker" data-tip="top.theme"></button>
+      <div class="seg lang-seg" role="radiogroup" data-i18n-aria="lang.label">
+        <button type="button" role="radio" data-lang="en" lang="en">EN</button>
+        <button type="button" role="radio" data-lang="ka" lang="ka">ქართული</button>
+      </div>
+    </div>
+    <div class="tb-group tb-actions">
+      <button type="button" id="save-state" class="save-state" data-state="saved" data-tip="save.saved" hidden>
+        <span class="save-dot" aria-hidden="true"></span><span class="save-text" aria-live="polite"></span>
+      </button>
+      <button type="button" id="btn-undo" class="icon-btn" data-tip="top.undo" data-keys="Ctrl+Z" disabled></button>
+      <button type="button" id="btn-redo" class="icon-btn" data-tip="top.redo" data-keys="Ctrl+Shift+Z" disabled></button>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <button type="button" id="btn-export" class="btn btn-quiet" disabled><span class="btn-label" data-i18n="top.export"></span></button>
+      <button type="button" id="btn-redraw" class="btn" disabled>
+        <span class="redraw-ic" aria-hidden="true"></span><span class="full"></span><span class="short"></span><span class="tiny"></span>
+      </button>
+      <button type="button" id="btn-panel" class="icon-btn" data-tip="top.panelHide" aria-pressed="true"></button>
+      <div id="account" class="account"></div>
+    </div>
+  </header>
+
+  <main id="stage" tabindex="0" data-i18n-aria="stage.label">
+    <div id="glow" aria-hidden="true"></div>
+    <img id="art" alt="" draggable="false">
+    <img id="art-next" alt="" draggable="false" hidden>
+    <svg id="overlay" aria-hidden="true"><g id="ov-art"></g><g id="ov-ui"></g><g id="ov-fx"></g></svg>
+
+    <div id="stage-state" data-stage-ui hidden></div>
+    <div id="card" data-stage-ui role="dialog" aria-labelledby="card-title" hidden></div>
+    <nav id="rail" data-stage-ui data-i18n-aria="tools.label"></nav>
+    <div id="zoom" data-stage-ui role="group" data-i18n-aria="zoom.label"></div>
+    <div id="hud" data-stage-ui hidden></div>
+    <div id="notice" data-stage-ui role="alert" hidden></div>
+  </main>
+
+  <aside id="panel" data-i18n-aria="panel.label"></aside>
+
+  <div id="toasts" aria-live="polite"></div>
+  <div id="tip" role="tooltip" hidden></div>
+</div>
+<noscript><p style="padding:2rem;color:#eee;font-family:sans-serif">This map editor needs JavaScript.</p></noscript>
+<script type="module" src="/web/js/main.js"></script>
+</body>
+</html>

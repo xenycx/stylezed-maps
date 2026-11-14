@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<rect class="paper ink" x="10" y="30" width="44" height="29"/>
+<path class="tone" d="M11 18h42l4 13q-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0Z"/>
+<path class="paper" d="M16.25 18h5.25l-2 13q-3.125 5-6.25 0ZM26.75 18H32v13q-3.125 5-6.25 0ZM37.25 18h5.25l2 13q-3.125 5-6.25 0ZM47.75 18H53l4 13q-3.125 5-6.25 0Z"/>
+<path class="ink" d="M11 18h42l4 13q-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0-3.125 5-6.25 0Z"/>
+<rect class="shade ink" x="37" y="41" width="10" height="18"/>
+<rect class="shade" x="15" y="40" width="16" height="10"/>
+<rect class="accent ink thin" x="16" y="53" width="12" height="6"/>
+</svg>
