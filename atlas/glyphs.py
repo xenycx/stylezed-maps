@@ -196,6 +196,27 @@ def house(gs, v=0):
             f'<path d="M-0.06,0 V-0.24 H0.1 V0" fill="none" {_stroke(gs, .8)}/>')
 
 
+def apartments(gs, v=0):
+    """City building: a flat-roofed block with rows of windows (for apartments, offices, shops and big footprints)."""
+    roof = gs.get("roof", gs.get("shade", "#a33"))
+    win = gs.get("window") or gs.get("ink") or "#000"
+    wo = gs.get("window_opacity", .55)
+
+    def block(x0, x1, top, cols, rows):
+        w, h = x1 - x0, -top
+        cw, rh = w / cols, (h - .14) / rows
+        wins = "".join(f"M{x0 + cw * (c + .3):.3f},{top + .12 + rh * (r + .25):.3f}h{cw * .4:.3f}v{rh * .42:.3f}h{-cw * .4:.3f}z"
+                       for c in range(cols) for r in range(rows))
+        return (f'<path d="M{x0},0 V{top} H{x1} V0Z" fill="{gs["fill"]}" {_stroke(gs)}/>'
+                f'<path d="M{x0 - .05},{top} V{top - .09} H{x1 + .05} V{top}Z" fill="{roof}" {_stroke(gs, .8)}/>'
+                f'<path d="{wins}" fill="{win}" fill-opacity="{wo}" stroke="none"/>')
+    if v % 3 == 1:  # long slab
+        return block(-.6, .6, -.74, 5, 3)
+    if v % 3 == 2:  # tower with a low wing
+        return block(.16, .56, -.5, 2, 2) + block(-.34, .2, -1.3, 2, 5)
+    return block(-.38, .38, -1.04, 3, 4)
+
+
 def moon(gs, v=0):
     """Full moon with a few maria; fill = disc, shade = craters, ink = optional rim."""
     c = gs.get("shade") or gs["fill"]
@@ -225,7 +246,7 @@ GLYPHS = {
     "conifer": conifer, "round": round_tree, "poplar": poplar, "ink_tree": ink_tree, "bush": bush, "grass": grass,
     "reed": reed, "vine": vine, "rock": rock, "haystack": haystack, "cow": cow, "sheep": sheep, "bird": bird,
     "grave": grave, "wave": wave, "rowboat": rowboat, "sailboat": sailboat, "mountain": mountain, "hill": hill,
-    "house": house, "moon": moon, "star": star, "sun": sun, "cloud": cloud,
+    "house": house, "apartments": apartments, "moon": moon, "star": star, "sun": sun, "cloud": cloud,
 }
 VARIANTS = 3
 

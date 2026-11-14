@@ -599,7 +599,7 @@
     },
     "buildings": {
       "*": {
-        "glyph": "house",
+        "glyph": "house", "blocks": {"glyph": "apartments"},
         "size": [
           1.9,
           2.5

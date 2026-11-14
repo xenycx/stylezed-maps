@@ -3,6 +3,7 @@
  {"id": "star", "label": "Favourite", "label_local": "რჩეული"},
  {"id": "heart", "label": "Loved place", "label_local": "საყვარელი ადგილი"},
  {"id": "house", "label": "House", "label_local": "სახლი"},
+ {"id": "apartments", "label": "Flat / apartment block", "label_local": "ბინა / საცხოვრებელი კორპუსი"},
  {"id": "tent", "label": "Camp", "label_local": "ბანაკი"},
  {"id": "shepherd-hut", "label": "Shepherd's hut", "label_local": "მწყემსის ქოხი"},
  {"id": "viewpoint", "label": "Viewpoint", "label_local": "გადასახედი"},

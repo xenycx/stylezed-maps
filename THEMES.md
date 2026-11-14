@@ -85,6 +85,10 @@ Rule keys (lines): `stroke`, `width`, `dash`, `linecap`, `opacity`, `wobble`, `c
 Dotted line = `"dash": "0.05 0.85"` (round caps).
 Buildings: either footprints (`fill`, `stroke`, `shadow`, `roofs`: list of colours picked at random per house) or little
 drawn houses: `{ "glyph": "house", "size": [1.9, 2.5], "min_gap": 1.5, "roofs": ["$r1", "$r2"], "walls": ["$lit", "$dark"], "style": { "ink", "fill", "sw" } }`
+— add `"blocks": { "glyph": "apartments" }` to draw city buildings as flat-roofed blocks with windows instead of little
+houses: those tagged apartments / commercial / office / retail / hotel / public … (`"tags": [...]`) or with a footprint
+over `"min_area"` m² (default 450). Optional `"size"`, `"roofs"`, `"walls"`, `"style"` (e.g. `"window"`,
+`"window_opacity"`), `"gap_scale"` (spacing vs houses, default 1.3). Without `"blocks"` nothing changes.
 (`roofs` / `walls` are picked at random per house — e.g. some windows lit, some dark, at night).
 
 ## scatter — the illustrated details

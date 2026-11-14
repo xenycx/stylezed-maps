@@ -83,7 +83,7 @@
       "major": { "stroke": "$road", "width": 1.1, "casing": { "color": "$pencil", "width": 1.46 }, "wobble": 0.12 },
       "minor": { "stroke": "$lane", "width": 0.55, "casing": { "color": "$pencil_soft", "width": 0.85 }, "wobble": 0.1 }
     },
-    "buildings": { "*": { "glyph": "house", "size": [1.7, 2.2], "min_gap": 1.4, "roofs": ["$roof1", "$roof2", "$roof3", "$roof1", "$roof4", "$roof3", "$roof5"],
+    "buildings": { "*": { "glyph": "house", "blocks": {"glyph": "apartments"}, "size": [1.7, 2.2], "min_gap": 1.4, "roofs": ["$roof1", "$roof2", "$roof3", "$roof1", "$roof4", "$roof3", "$roof5"],
                           "style": { "ink": "$pencil_soft", "fill": "$wall", "sw": 0.05 } } }
   },
   "bridges": { "size": 1.9, "gap": 0.9, "stroke": "$pencil", "width": 0.22, "deck": "$lane" },

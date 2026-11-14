@@ -55,6 +55,7 @@ def build_id():
 
 
 BUILD = build_id()
+DATA_DIR = ROOT / "var"
 MAX_BODY = 2 * 1024 * 1024
 MIME = dict(studio.MIME, **{".pdf": "application/pdf", ".ico": "image/x-icon"})
 COMPRESS = {".html", ".css", ".js", ".json", ".svg", ".txt"}
@@ -215,30 +216,63 @@ def auto_landmarks(slug):
         return None
 
 
-def backfill_landmarks():
-    """Places made before automatic landmarks: give them landmarks and redraw their public styles once."""
-    for p in db.all_("SELECT slug FROM places WHERE status='ready'"):
-        if (ROOT / "data" / p["slug"] / "landmarks.json").exists():
-            continue
-        if auto_landmarks(p["slug"]) is not None:
-            for r in renders_in(out_dir(p["slug"])):
-                (out_dir(p["slug"]) / f"{r['id']}.json").unlink(missing_ok=True)  # stale: drawn without landmarks
-            refresh_needed.add(p["slug"])
-    for slug in sorted(refresh_needed):
-        p = db.one("SELECT lang FROM places WHERE slug=?", slug)
-        if p:
-            try:
-                jobs.render_q.submit("render", ("pub", slug, DEFAULT_THEME, p["lang"]), lambda s=slug, l=p["lang"]: render_public(s, DEFAULT_THEME, l))
-            except jobs.Busy:
-                break
+def redraw_all(slug):
+    """Queue every existing drawing of a place again (public styles first, then visitors' own). The old picture stays
+    on screen until the new one replaces it. Returns False when the queue is full."""
+    p = db.one("SELECT lang FROM places WHERE slug=?", slug)
+    if not p:
+        return True
+    pub = sorted(renders_in(out_dir(slug)), key=lambda r: (r["theme"] != DEFAULT_THEME, r["id"]))
+    try:
+        for r in pub:
+            th, lg = r["theme"], r["lang"]
+            jobs.render_q.submit("render", ("pub", slug, th, lg), lambda th=th, lg=lg: render_public(slug, th, lg))
+        u = out_dir(slug) / "u"
+        for d in sorted(u.iterdir()) if u.is_dir() else []:
+            if not d.name.isdigit():
+                continue
+            uid = int(d.name)
+            for r in renders_in(d):
+                th, lg = r["theme"], r["lang"]
+                jobs.render_q.submit("render", ("bake", slug, uid, th, lg), lambda th=th, lg=lg, uid=uid: render_mine(slug, uid, th, lg))
+    except jobs.Busy:
+        return False
+    return True
 
 
-refresh_needed = set()
+def engine_build():
+    """Fingerprint of everything that changes how a map is drawn."""
+    import hashlib
+    h = hashlib.sha1(str(landmarks_auto.VERSION).encode())
+    for d in ("atlas", "styles", "icons/auto", "i18n"):
+        for f in sorted((ROOT / d).rglob("*")):
+            if f.is_file() and f.suffix in (".py", ".json", ".svg"):
+                h.update(f.relative_to(ROOT).as_posix().encode() + f.read_bytes())
+    return h.hexdigest()[:12]
+
+
+def upgrade_maps():
+    """After a deploy that changes the drawing: refresh automatic landmarks, then redraw every map once."""
+    stamp = DATA_DIR / ".engine_build"
+    now = engine_build()
+    try:
+        if stamp.read_text().strip() == now:
+            return
+    except OSError:
+        pass
+    ok = True
+    for p in db.all_("SELECT slug FROM places WHERE status='ready' ORDER BY created DESC"):
+        if landmarks_auto.outdated(p["slug"]):
+            auto_landmarks(p["slug"])
+        ok = redraw_all(p["slug"]) and ok
+    if ok:  # a full queue leaves the stamp alone: the rest is redrawn after the next restart (or on demand)
+        stamp.write_text(now)
 
 
 def render_public(slug, theme, lang):
     p = db.one("SELECT lang FROM places WHERE slug=?", slug)
     pipeline.render(slug, theme, lang, out_dir(slug), thumb=bool(p) and theme == DEFAULT_THEME and lang == p["lang"])
+    warm_hd(out_dir(slug), theme, lang)
 
 
 def render_mine(slug, uid, theme, lang):
@@ -255,9 +289,57 @@ def render_mine(slug, uid, theme, lang):
     f = d / ".custom.json"
     atomic_write(f, json.dumps(merged, ensure_ascii=False))
     pipeline.render(slug, theme, lang, d, custom=f, fonts=font_choice(uid, slug, theme, lang))
+    warm_hd(d, theme, lang)
 
 
 HD_WIDTH = db.env_int("HD_WIDTH", 4000)
+
+
+_hd_queue, _hd_pending, _hd_lock = [], set(), threading.Condition()
+
+
+def hd_path(d, theme, lang):
+    return d / f"{theme}.{lang}.hd.jpg"
+
+
+def hd_fresh(d, theme, lang):
+    t, svg = hd_path(d, theme, lang), d / f"{theme}.{lang}.svg"
+    return t.is_file() and svg.is_file() and t.stat().st_mtime >= svg.stat().st_mtime
+
+
+def warm_hd(d, theme, lang):
+    """Make the zoom image in the background, so it is ready before anyone zooms in."""
+    if hd_fresh(d, theme, lang) or not (d / f"{theme}.{lang}.svg").is_file():
+        return
+    key = str(hd_path(d, theme, lang))
+    with _hd_lock:
+        if key in _hd_pending or len(_hd_queue) > 200:
+            return
+        _hd_pending.add(key)
+        _hd_queue.append((d, theme, lang))
+        _hd_lock.notify()
+
+
+def hd_worker():
+    while True:
+        with _hd_lock:
+            while not _hd_queue:
+                _hd_lock.wait()
+            d, theme, lang = _hd_queue.pop(0)
+        try:
+            ensure_hd(d, theme, lang)
+        except Exception as e:  # noqa: BLE001
+            print(f"zoom image failed for {d}/{theme}.{lang}: {e}", file=sys.stderr, flush=True)
+        finally:
+            with _hd_lock:
+                _hd_pending.discard(str(hd_path(d, theme, lang)))
+
+
+def ensure_hd(d, theme, lang):
+    with place_lock(f"hd:{d}/{theme}.{lang}"):
+        if not hd_fresh(d, theme, lang):
+            make_hd(d / f"{theme}.{lang}.svg", hd_path(d, theme, lang))
+    return hd_path(d, theme, lang)
 
 
 def make_hd(svg, target):
@@ -269,9 +351,15 @@ def make_hd(svg, target):
     tmp_png = target.with_name("." + target.name + ".png.tmp")
     tmp = target.with_name("." + target.name + ".tmp")
     try:
-        subprocess.run(["rsvg-convert", "-w", str(HD_WIDTH), "-o", str(tmp_png), str(svg)], check=True, env=ENV, timeout=240)
+        def low_priority():
+            try:
+                os.nice(10)   # drawing a requested map comes first
+            except OSError:
+                pass
+        subprocess.run(["rsvg-convert", "-w", str(HD_WIDTH), "-o", str(tmp_png), str(svg)], check=True, env=ENV, timeout=240,
+                       preexec_fn=low_priority)
         with Image.open(tmp_png) as im:
-            im.convert("RGB").save(tmp, "JPEG", quality=78, optimize=True, progressive=True)
+            im.convert("RGB").save(tmp, "JPEG", quality=80)
         os.replace(tmp, target)
     finally:
         for f in (tmp_png, tmp):
@@ -607,6 +695,9 @@ class Handler(BaseHTTPRequestHandler):
             side = sidecar(p["slug"], q["theme"], q["lang"], me)
             if side is None:
                 raise ApiError(404, "not_rendered", "This theme has not been drawn in this language yet.")
+            # someone is looking at this drawing: have its zoom image ready
+            rel = side["_studio"]["dir"].strip("/").split("/")[1:]
+            warm_hd(ROOT / "out" / Path(*map(unquote, rel)), q["theme"], q["lang"])
             return self.send_json(side)
         m = re.fullmatch(r"/api/job/(\d+)", path)
         if m:
@@ -661,11 +752,8 @@ class Handler(BaseHTTPRequestHandler):
         if fmt in ("svg", "jpg"):
             return self.send_file(d / f"{theme}.{lang}.{fmt}", "no-cache", f"{name}.{fmt}")
         with EXPORTS_AT_ONCE, place_lock(f"x:{d}"):
-            if fmt == "hd":  # sharper copy for zooming in on screen
-                target = d / f"{theme}.{lang}.hd.jpg"
-                if not target.is_file() or target.stat().st_mtime < svg.stat().st_mtime:
-                    make_hd(svg, target)
-                return self.send_file(target, "private, max-age=86400")
+            if fmt == "hd":  # sharper copy for zooming in on screen (normally made in the background already)
+                return self.send_file(ensure_hd(d, theme, lang), "private, max-age=86400")
             if fmt == "png":
                 target = d / f"{theme}.{lang}.print.png"
                 if not target.is_file() or target.stat().st_mtime < svg.stat().st_mtime:
@@ -1029,7 +1117,8 @@ def main():
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8080")))
     ap.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     a = ap.parse_args()
-    data_dir = Path(os.environ.get("DATA_DIR") or ROOT / "var")
+    global DATA_DIR
+    data_dir = DATA_DIR = Path(os.environ.get("DATA_DIR") or ROOT / "var")
     data_dir.mkdir(parents=True, exist_ok=True)
     for sub in ("data", "out"):
         (ROOT / sub).mkdir(exist_ok=True)
@@ -1038,7 +1127,8 @@ def main():
     jobs.start()
     seed_places()
     resume_unfinished()
-    threading.Thread(target=backfill_landmarks, daemon=True).start()
+    threading.Thread(target=upgrade_maps, daemon=True).start()
+    threading.Thread(target=hd_worker, daemon=True).start()
     threading.Thread(target=housekeeping, daemon=True).start()
     ThreadingHTTPServer.daemon_threads = True
     ThreadingHTTPServer.request_queue_size = 64

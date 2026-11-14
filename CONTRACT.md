@@ -26,6 +26,10 @@ All paths are relative to the project root. `<slug>` is the place id (e.g. `niko
     "osm": "w712271284"                    // optional source id
 } ] }
 ```
+Optional per landmark: `"label"` / `"label_local"` — the text beside the icon on the map when it should differ from the
+name (`""` = icon only; the index still lists the full name); `"force_label"` — draw the label even where it collides
+(default: true for rank 1). A file with `"auto": true` was written by the site's `webapp/landmarks_auto.py`, which may
+rewrite it; icons there come from `icons/auto/` and may repeat by kind.
 
 ### Icon files (`data/<slug>/icons/*.svg` and `icons/library/*.svg`)
 * `viewBox="0 0 64 64"`, no width/height, no text, no gradients, no filters, no images, no `<use>`.

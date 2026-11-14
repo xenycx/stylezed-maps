@@ -255,6 +255,11 @@ class Annot:
     def lm_name(self, lm):
         return (lm.get("name") or lm.get("name_local")) if self.lang == "en" else (lm.get("name_local") or lm.get("name"))
 
+    def lm_label(self, lm):
+        """Text next to the icon on the map: "label" / "label_local" when given ("" = icon only), else the name."""
+        key = "label" if self.lang == "en" else "label_local"
+        return lm[key] if isinstance(lm.get(key), str) else self.lm_name(lm)
+
     def landmark_labels(self):
         cfg = self.st.get("landmarks") or {}
         base = cfg.get("label")
@@ -267,13 +272,16 @@ class Annot:
             f = dict(base, size=sizes[min(it["rank"], len(sizes)) - 1])
             if it["rank"] == 1 and cfg.get("label_hero"):
                 f.update(cfg["label_hero"])
-            ls = [(t, f) for t in self.wrap(self.lm_name(it["lm"]), f, cfg.get("label_width", 26))]
+            text = self.lm_label(it["lm"])
+            if not text:
+                continue
+            ls = [(t, f) for t in self.wrap(text, f, cfg.get("label_width", 26))]
             s, gx, gy = it["s"], it["gx"], it["gy"]
             h = self.font(f)["size"] * 1.1 * len(ls)
             mid = gy - s * .45
             offs = [(0, s * .08 + h / 2 + .4, "middle"), (s * .5, mid - gy, "start"), (-s * .5, mid - gy, "end"), (0, -s * .98 - h / 2, "middle"),
                     (s * .5, -s * .8, "start"), (-s * .5, -s * .8, "end"), (s * .45, s * .1 + h / 2, "start"), (-s * .45, s * .1 + h / 2, "end")]
-            self.place_label(gx, gy, ls, offs, force=it["rank"] == 1)
+            self.place_label(gx, gy, ls, offs, force=it["lm"].get("force_label", it["rank"] == 1))
 
     # ------------------------------------------------------------ the user's own additions (custom.json)
     def plan_custom(self):

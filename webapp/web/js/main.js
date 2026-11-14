@@ -189,7 +189,7 @@ function maybeHd() {
   hdTimer = setTimeout(() => {
     const side = S.side;
     if (!side || hdFor === side || S.wipe || !S.place) return;
-    if (view.k * (window.devicePixelRatio || 1) < 1.2) return;
+    if (view.k * (window.devicePixelRatio || 1) < 1) return;
     hdFor = side;
     const url = `${api.exportUrl(S.place.slug, { theme: side.theme, lang: side.lang, fmt: 'hd', mine: side._studio?.mine ? '1' : '0' })}&v=${side._studio?.mtime || ''}`;
     const img = new Image();

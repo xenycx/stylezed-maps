@@ -8,9 +8,15 @@
 .accent{fill:#b3402e}
 .solid{fill:#2b2118;stroke:none}
 </style>
-<path class="ink" d="M32 8L17.5 59M32 8l14.5 51M32 44v12"/>
-<rect class="paper ink" x="14" y="15" width="36" height="27"/>
-<polygon class="tone" points="16,40 25.5,27 31,33.5 36.5,27.5 48,40"/>
-<circle class="accent" cx="41.5" cy="22" r="3.2"/>
-<path class="ink" d="M11.5 44.5h41"/>
+<rect class="paper ink" x="8" y="54" width="48" height="5"/>
+<rect class="paper ink" x="11" y="50" width="42" height="4"/>
+<rect class="shade" x="10" y="27" width="44" height="23"/>
+<rect class="paper ink" x="12" y="27" width="5" height="23"/>
+<rect class="paper ink" x="21.5" y="27" width="5" height="23"/>
+<rect class="paper ink" x="37.5" y="27" width="5" height="23"/>
+<rect class="paper ink" x="47" y="27" width="5" height="23"/>
+<path class="tone ink" d="M28 50V36a4 4 0 0 1 8 0v14Z"/>
+<rect class="paper ink" x="9" y="22" width="46" height="5"/>
+<polygon class="tone ink" points="7,22 32,8 57,22"/>
+<circle class="accent" cx="32" cy="16.5" r="2.6"/>
 </svg>

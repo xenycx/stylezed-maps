@@ -399,21 +399,36 @@ class Layers:
         self.present.add("building")
         gl = rule.get("glyph")
         if gl:
-            pts = sorted(((g.centroid.x, g.centroid.y, p.get("id", "")) for g, p in items), key=lambda t: t[1])
+            # "blocks": draw city buildings (by tag, or by footprint) as a second glyph, e.g. apartment blocks
+            bk = rule.get("blocks") or {}
+            bk_tags = set(bk.get("tags", ["apartments", "commercial", "office", "retail", "hotel", "dormitory", "hospital",
+                                           "university", "college", "public", "civic", "government", "industrial"]))
+            bk_area = bk.get("min_area", 450) * self.map.scale ** 2   # m² → page units²
+            is_block = (lambda g, p: p.get("building") in bk_tags or g.area >= bk_area) if bk.get("glyph") else (lambda g, p: False)
+            pts = sorted(((g.centroid.x, g.centroid.y, p.get("id", ""), is_block(g, p)) for g, p in items), key=lambda t: t[1])
             s0, s1 = rule.get("size", [1.5, 2.0])
             roofs = rule.get("roofs") or [rule.get("style", {}).get("roof", "#a44")]
             keep, grid = [], set()
             cell = rule.get("min_gap", 0.0)
             clear = self.mask(["landmarks", "decor"], 0)
-            for x, y, i in pts:  # thin out so tiny houses do not pile up; keep clear of icons and furniture
-                k = (round(x / cell), round(y / cell)) if cell else (x, y)
+            for x, y, i, blk in pts:  # thin out so tiny houses do not pile up; keep clear of icons and furniture
+                c = cell * bk.get("gap_scale", 1.3) if blk else cell
+                k = (round(x / c), round(y / c), blk) if c else (x, y, blk)
                 if k in grid or (clear is not None and shapely.contains_xy(clear, x, y)):
                     continue
                 grid.add(k)
-                keep.append((x, y, i))
+                keep.append((x, y, i, blk))
             walls = rule.get("walls") or [rule.get("style", {}).get("fill", "#fff")]   # e.g. lit and dark windows at night
-            for x, y, i in keep:
+            b_roofs = bk.get("roofs") or roofs
+            b_walls = bk.get("walls") or walls
+            b0, b1 = bk.get("size", [s0 * 1.1, s1 * 1.2])
+            for x, y, i, blk in keep:
                 r = seeded(self.seed, i)
+                if blk:
+                    ri, wi = r.randrange(len(b_roofs)), r.randrange(len(b_walls))
+                    self.use(f"bk{ri}w{wi}", bk["glyph"], r.randrange(3), dict(rule.get("style", {}), **bk.get("style", {}), roof=b_roofs[ri], fill=b_walls[wi]),
+                             x, y + b0 * .3, r.uniform(b0, b1))
+                    continue
                 ri, wi = r.randrange(len(roofs)), r.randrange(len(walls))
                 self.use(f"bd{ri}w{wi}", gl, r.randrange(3), dict(rule.get("style", {}), roof=roofs[ri], fill=walls[wi]), x, y + s0 * .3, r.uniform(s0, s1))
             return

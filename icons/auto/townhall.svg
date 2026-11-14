@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<rect class="paper ink" x="7" y="32" width="50" height="27"/>
+<rect class="tone ink" x="5" y="29" width="54" height="4"/>
+<rect class="paper ink" x="26" y="13" width="12" height="16"/>
+<path class="tone ink" d="M24.5 13L32 5l7.5 8Z"/>
+<circle class="paper ink" cx="32" cy="21" r="3.6"/>
+<path class="ink thin" d="M32 19v2.4l1.8 1"/>
+<path class="accent ink" d="M28 59v-9a4 4 0 0 1 8 0v9Z"/>
+<rect class="shade" x="11" y="37" width="4" height="6"/>
+<rect class="shade" x="18" y="37" width="4" height="6"/>
+<rect class="shade" x="42" y="37" width="4" height="6"/>
+<rect class="shade" x="49" y="37" width="4" height="6"/>
+<rect class="shade" x="11" y="48" width="4" height="6"/>
+<rect class="shade" x="18" y="48" width="4" height="6"/>
+<rect class="shade" x="42" y="48" width="4" height="6"/>
+<rect class="shade" x="49" y="48" width="4" height="6"/>
+</svg>

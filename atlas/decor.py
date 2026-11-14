@@ -337,10 +337,30 @@ class Decor:
                 self.out.append(f'<circle cx="{tx + 1.4:.2f}" cy="{yy:.2f}" r="1.4" fill="{pin.get("fill", "#c33")}"/>')
                 self.text(tx + 1.4, yy, str(it["num"]), pin.get("font", {"font": "@text", "size": 1.9, "color": "#fff", "weight": "bold"}))
                 tx += 3.6
-            ls = self.wrap(self.lm_name(it["lm"]), f, cw - (tx - x) - 2)
+            ls = self.fit_lines(self.lm_name(it["lm"]), f, cw - (tx - x) - 2, 2)
             fs = self.font(f)["size"]
-            for j, t in enumerate(ls[:2]):
-                self.text(tx, yy + (j - (len(ls[:2]) - 1) / 2) * fs * 1.1, t, f, "start")
+            for j, t in enumerate(ls):
+                self.text(tx, yy + (j - (len(ls) - 1) / 2) * fs * 1.1, t, f, "start")
+
+    def fit_lines(self, text, f, max_w, max_lines):
+        """Greedy word wrap into at most max_lines lines no wider than max_w; the last one ends in … if it must."""
+        out, cur = [], ""
+        for w in text.split():
+            t = f"{cur} {w}".strip()
+            if cur and self.measure(t, f) > max_w:
+                out.append(cur)
+                cur = w
+            else:
+                cur = t
+        out.append(cur)
+        if len(out) > max_lines:
+            out = out[:max_lines - 1] + [" ".join(out[max_lines - 1:])]
+        last = out[-1]
+        if self.measure(last, f) > max_w:
+            while last and self.measure(last + "…", f) > max_w:
+                last = last[:-1]
+            out[-1] = last.rstrip(" ,.-") + "…"
+        return out
 
     # ------------------------------------------------------------ loose text, panels, attribution
     def ornaments(self):

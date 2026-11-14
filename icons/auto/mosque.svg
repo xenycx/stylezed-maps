@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<style>
+.ink{fill:none;stroke:#2b2118;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.thin{stroke-width:1.2}
+.paper{fill:#fbf3e0}
+.tone{fill:#d9bf94}
+.shade{fill:#5b4632}
+.accent{fill:#b3402e}
+.solid{fill:#2b2118;stroke:none}
+</style>
+<rect class="paper ink" x="45" y="14" width="7" height="45"/>
+<path class="tone ink" d="M44.5 14l4-8 4 8Z"/>
+<rect class="tone ink" x="43.5" y="24" width="10" height="3"/>
+<rect class="shade" x="47" y="32" width="3" height="5"/>
+<rect class="paper ink" x="8" y="38" width="36" height="21"/>
+<path class="tone ink" d="M12 38a14 14 0 0 1 28 0Z"/>
+<path class="ink" d="M26 24v-4"/>
+<path class="accent" d="M27.6 13.4a3.3 3.3 0 1 0 0 5.2 2.6 2.6 0 1 1 0-5.2Z"/>
+<path class="shade ink" d="M22 59v-9a4 4 0 0 1 8 0v9Z"/>
+<path class="shade" d="M12.5 52v-5a2 2 0 0 1 4 0v5ZM35.5 52v-5a2 2 0 0 1 4 0v5Z"/>
+</svg>
