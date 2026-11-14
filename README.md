@@ -14,6 +14,9 @@ Storage is one folder (`/data`): an SQLite database plus each place's map data a
   and the same place + size + language is never made twice.
 * Drawing a style takes 2–6 s in a separate process (memory goes back after each map); one at a time by default.
 * The browser shows a 1600 px JPG. Print PNG (3000 px) and PDFs are only made when someone downloads one, then cached.
+* Sizes: S 1.6 km, M 2.8 km, L 4.4 km, XL "city" 9 km across. XL uses a lean download (buildings as bounding boxes, no
+  footways or service lanes, only notable points) and takes ~30–60 s to draw with up to ~700 MB: give the app 2 GB.
+* When making a map, visitors can drag a small OpenStreetMap preview to move the poster's frame (within 30 km of the place).
 * Zooming in past 1:1 fetches a 4000 px JPG of that style, made once per drawing and cached.
 * New places get landmarks automatically (churches, fortresses, schools, caves, springs …) with icons from
   `icons/auto/`. Add a kind in `KINDS` of `webapp/landmarks_auto.py`, or a new icon to `icons/auto/`.

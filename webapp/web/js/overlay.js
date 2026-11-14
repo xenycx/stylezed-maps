@@ -181,7 +181,8 @@ function placeArt(p) {
 
 function placeMarkup(p, st, hidden) {
   const [x, y] = S.proj.toPx(p.lon, p.lat);
-  const size = st.place.size, sc = size / 64, fs = st.place.fontPx;
+  const scale = Math.min(2.5, Math.max(0.5, Number(p.size) || 1));
+  const size = st.place.size * scale, sc = size / 64, fs = st.place.fontPx;
   const art = placeArt(p);
   const tf = `transform="translate(${(-32 * sc).toFixed(2)} ${(-60 * sc).toFixed(2)}) scale(${sc.toFixed(4)})"`;
   const lines = wrap(p.name, 22, 3);

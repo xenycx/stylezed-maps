@@ -630,3 +630,8 @@ input[type="text"]:focus-visible, textarea:focus-visible { outline: none; border
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   .bar::after { width: 100%; opacity: 0.5; }
 }
+
+/* place editor: icon size */
+.size-row { display: flex; align-items: center; gap: 10px; }
+.size-range { flex: 1; min-width: 0; accent-color: var(--accent); }
+.size-val { min-width: 3.2em; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }

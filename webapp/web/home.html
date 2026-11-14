@@ -41,6 +41,17 @@
         <legend data-i18n="home.pick"></legend>
         <div id="results"></div>
       </fieldset>
+      <div class="framer">
+        <div id="framer" class="framer-map" tabindex="0" data-i18n-aria="home.frame.aria">
+          <div class="framer-tiles"></div>
+          <div class="framer-shade" aria-hidden="true"><div class="framer-box"></div></div>
+          <span class="framer-credit">© OpenStreetMap</span>
+        </div>
+        <div class="framer-bar">
+          <span class="framer-hint" data-i18n="home.frame.hint"></span>
+          <button id="frame-reset" class="btn btn-quiet btn-small" type="button" data-i18n="home.frame.reset" hidden></button>
+        </div>
+      </div>
       <div class="make-opts">
         <div class="opt">
           <span class="opt-label" id="size-label" data-i18n="home.size"></span>
@@ -48,6 +59,7 @@
             <button type="button" role="radio" data-size="s" data-i18n="home.size.s"></button>
             <button type="button" role="radio" data-size="m" data-i18n="home.size.m"></button>
             <button type="button" role="radio" data-size="l" data-i18n="home.size.l"></button>
+            <button type="button" role="radio" data-size="xl" data-i18n="home.size.xl"></button>
           </div>
         </div>
         <label class="opt">

@@ -20,7 +20,8 @@ import fetch as F  # noqa: E402
 
 UA = {"User-Agent": os.environ.get("OSM_USER_AGENT") or "stylized-maps-site/1.0 (+https://github.com/xenycx/stylezed-maps)"}
 F.UA = UA
-SIZES = {"s": 800, "m": 1400, "l": 2200}   # half-width of the map in metres
+SIZES = {"s": 800, "m": 1400, "l": 2200, "xl": 4500}   # half-width of the map in metres
+LEAN_FROM = 3000   # radius (m) from which the lean city download is used (see fetch.overpass_text)
 OVERPASS_DEADLINE = int(os.environ.get("OVERPASS_DEADLINE", "1200"))  # seconds before "try again later"
 _nominatim_lock = threading.Lock()
 _nominatim_last = [0.0]
@@ -66,16 +67,16 @@ def slug_for(name):
     return f"{base}-{os.urandom(3).hex()}"
 
 
-def overpass(bbox):
+def overpass(bbox, lean=False):
     t_end = time.time() + OVERPASS_DEADLINE
-    query = F.overpass_text(bbox)
+    query = F.overpass_text(bbox, lean=lean)
     last, attempt = None, 0
     while time.time() < t_end:
         for url in F.OVERPASS:
             if time.time() >= t_end:
                 break
             try:
-                r = requests.post(url, data={"data": query}, headers=UA, timeout=min(180, max(10, t_end - time.time())))
+                r = requests.post(url, data={"data": query}, headers=UA, timeout=min(300, max(10, t_end - time.time())))
                 r.raise_for_status()
                 return r.json()["elements"]
             except Exception as ex:  # noqa: BLE001
@@ -93,7 +94,7 @@ def fetch_place(slug, place):
     lat, lon, radius, lang = place["lat"], place["lon"], place["radius"], place["lang"]
     bbox = F.bbox_around(lat, lon, radius)
     fetch_bbox = F.bbox_around(lat, lon, radius * 1.25)
-    els = overpass(fetch_bbox)
+    els = overpass(fetch_bbox, lean=radius >= LEAN_FROM)
     if len(els) > 400_000:
         raise PlaceError("This area has too much map data to draw. Choose a smaller size.")
     layers = F.build_layers(els, lang, fetch_bbox)
@@ -104,7 +105,7 @@ def fetch_place(slug, place):
     (d / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1))
     (d / "layers.json").write_text(json.dumps(
         {k: {"type": "FeatureCollection", "features": v} for k, v in layers.items()}, ensure_ascii=False))
-    zoom = 14 if radius <= 1500 else 13
+    zoom = 14 if radius <= 1500 else 13 if radius < LEAN_FROM else 12
     proc = subprocess.run([sys.executable, "terrain.py", slug, "--zoom", str(zoom)], cwd=ROOT,
                           capture_output=True, text=True, timeout=600)
     if proc.returncode != 0:

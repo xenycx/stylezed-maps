@@ -404,7 +404,15 @@ class Layers:
             bk_tags = set(bk.get("tags", ["apartments", "commercial", "office", "retail", "hotel", "dormitory", "hospital",
                                            "university", "college", "public", "civic", "government", "industrial"]))
             bk_area = bk.get("min_area", 450) * self.map.scale ** 2   # m² → page units²
-            is_block = (lambda g, p: p.get("building") in bk_tags or g.area >= bk_area) if bk.get("glyph") else (lambda g, p: False)
+            min_levels = bk.get("min_levels", 4)
+
+            def levels(p):
+                try:
+                    return float(str(p.get("building:levels", "0")).split(";")[0])
+                except ValueError:
+                    return 0
+            is_block = ((lambda g, p: p.get("building") in bk_tags or g.area >= bk_area or levels(p) >= min_levels)
+                        if bk.get("glyph") else (lambda g, p: False))
             pts = sorted(((g.centroid.x, g.centroid.y, p.get("id", ""), is_block(g, p)) for g, p in items), key=lambda t: t[1])
             s0, s1 = rule.get("size", [1.5, 2.0])
             roofs = rule.get("roofs") or [rule.get("style", {}).get("roof", "#a44")]

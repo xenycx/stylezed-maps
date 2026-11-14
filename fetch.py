@@ -60,10 +60,40 @@ def overpass_query(q):
     sys.exit("all overpass endpoints failed")
 
 
-def overpass_text(bbox):
-    """The Overpass query for everything the engine draws inside bbox (s, w, n, e)."""
+LEAN_HIGHWAYS = "motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|road|pedestrian|track|path|bridleway"
+LEAN_AMENITY = ("place_of_worship|school|university|college|kindergarten|library|theatre|cinema|arts_centre|hospital|clinic|"
+                "townhall|public_bath|marketplace|fountain|drinking_water|grave_yard|monastery")
+
+
+def overpass_text(bbox, lean=False):
+    """The Overpass query for everything the engine draws inside bbox (s, w, n, e).
+
+    lean=True is for city-sized maps (several km across): buildings come as a centre point + tags instead of an
+    outline, footways / service lanes / steps are left out, and only notable kinds of points are fetched. That keeps
+    a 9 km city to a few tens of MB instead of hundreds."""
     s, w, n, e = bbox
     b = f"({s},{w},{n},{e})"
+    if lean:
+        return f"""[out:json][timeout:240];
+way["building"]{b};
+out tags bb;
+(
+  way["highway"~"^({LEAN_HIGHWAYS})$"]{b};
+  way["waterway"]{b};
+  way["natural"]{b}; relation["natural"]{b};
+  node["natural"~"beach|bay|cape"]{b};
+  way["landuse"]{b}; relation["landuse"]{b};
+  way["leisure"]{b};
+  way["amenity"~"^({LEAN_AMENITY})$"]{b};
+  way["historic"]{b};
+  way["railway"]{b};
+  node["place"]{b};
+  node["natural"~"peak|spring|cave_entrance|saddle"]{b};
+  node["amenity"~"^({LEAN_AMENITY})$"]{b}; node["historic"]{b};
+  node["tourism"~"museum|attraction|viewpoint|gallery|artwork"]{b};
+  node["man_made"~"tower|lighthouse|bridge|water_well"]{b};
+);
+out body geom;"""
     q = f"""[out:json][timeout:120];
 (
   way["building"]{b};
@@ -215,7 +245,7 @@ def build_layers(elements, lang="en", fetch_bbox=None):
                  **{k: tags[k] for k in ("highway", "waterway", "building", "amenity", "historic",
                                          "tourism", "natural", "landuse", "place", "ele",
                                          "religion", "man_made", "intermittent", "wikidata", "wikipedia",
-                                         "start_date", "description", "leaf_type") if k in tags}}
+                                         "start_date", "description", "leaf_type", "building:levels") if k in tags}}
         if el["type"] == "node":
             if "place" in tags:
                 layers["places"].append(feat("Point", [el["lon"], el["lat"]], props))
@@ -229,6 +259,12 @@ def build_layers(elements, lang="en", fetch_bbox=None):
         cls = classify(tags)
         if el["type"] == "way":
             coords = way_geom(el)
+            if len(coords) < 2 and el.get("bounds") and cls and cls[0] == "buildings":
+                # lean download: a building is only its bounding box; it stands in for the footprint (size matters:
+                # the engine draws big ones as apartment blocks)
+                bb = el["bounds"]
+                w0, s0, e0, n0 = bb["minlon"], bb["minlat"], bb["maxlon"], bb["maxlat"]
+                coords = [[w0, s0], [e0, s0], [e0, n0], [w0, n0], [w0, s0]]
             if len(coords) < 2:
                 continue
             # area-ish ways that are also POIs (e.g. a church building) -> add a POI point too

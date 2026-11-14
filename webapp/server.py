@@ -16,6 +16,7 @@ Environment (all optional for local development):
 import argparse
 import gzip
 import json
+import math
 import os
 import re
 import shutil
@@ -455,7 +456,7 @@ class Handler(BaseHTTPRequestHandler):
         if ctype.startswith("text/html"):
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Content-Security-Policy",
-                             "default-src 'self'; img-src 'self' data: blob: https://*.googleusercontent.com; "
+                             "default-src 'self'; img-src 'self' data: blob: https://*.googleusercontent.com https://tile.openstreetmap.org; "
                              "style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; "
                              "connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'none'; base-uri 'none'")
 
@@ -856,10 +857,21 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, "bad_request", "Choose a size and a language.")
         if osm_type not in ("node", "way", "relation") or not isinstance(osm_id, int):
             raise ApiError(400, "bad_place", "Pick a place from the search results.")
-        old = db.one("SELECT * FROM places WHERE osm_type=? AND osm_id=? AND size=? AND lang=? AND status!='failed' ORDER BY created LIMIT 1",
-                     osm_type, osm_id, size, lang)
-        if old and not old["hidden"]:
-            return self.send_json({"slug": old["slug"], "existing": True})
+        center = body.get("center")
+        if center is not None:
+            try:
+                clat, clon = float(center["lat"]), float(center["lon"])
+                if not (-85 < clat < 85 and -180 <= clon <= 180):
+                    raise ValueError
+            except (TypeError, KeyError, ValueError):
+                raise ApiError(400, "bad_center", "The map centre is not a valid position.")
+        olds = db.all_("SELECT * FROM places WHERE osm_type=? AND osm_id=? AND size=? AND lang=? AND status!='failed' ORDER BY created",
+                       osm_type, osm_id, size, lang)
+        for old in olds:  # the same place, size and language, framed (almost) the same: reuse it
+            if old["hidden"]:
+                continue
+            if center is None or (abs(old["lat"] - clat) < 0.0012 and abs(old["lon"] - clon) < 0.0016):
+                return self.send_json({"slug": old["slug"], "existing": True})
         key = f"u{u['id']}"
         if not u["is_admin"] and not db.take(key, "place", PLACES_PER_DAY):
             raise ApiError(429, "quota", f"You can make {PLACES_PER_DAY} new maps a day. Try again tomorrow.")
@@ -868,6 +880,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # noqa: BLE001
             db.give_back(key, "place")
             raise ApiError(502, "lookup_failed", f"OpenStreetMap could not find that place ({e}).")
+        if center is not None:
+            # the visitor moved the frame: keep it near the place itself (a map of X should show X's area)
+            dist = math.hypot((clon - info["lon"]) * 111_320 * math.cos(math.radians(info["lat"])), (clat - info["lat"]) * 111_320)
+            if dist > 30_000:
+                db.give_back(key, "place")
+                raise ApiError(400, "bad_center", "The map centre is too far from the place.")
+            info = dict(info, lat=clat, lon=clon)
         slug = pipeline.slug_for(info["name"])
         now = time.time()
         db.run("INSERT INTO places(slug, osm_type, osm_id, name, name_local, display_name, lang, size, radius, lat, lon, status, created_by, created, updated) "

@@ -11,6 +11,12 @@ _STRIP = re.compile(r"<\?xml.*?\?>|<!--.*?-->|<style.*?</style>|<title.*?</title
 GEORGIAN = re.compile(r"[Ⴀ-ჿᲐ-Ჿ]")
 
 
+
+def place_scale(p):
+    """A user place's own size: "size" in custom.json, 0.5–2.5 times the style's place size (default 1)."""
+    v = p.get("size", 1)
+    return min(2.5, max(0.5, float(v))) if isinstance(v, (int, float)) and not isinstance(v, bool) else 1.0
+
 class Annot:
     # ------------------------------------------------------------ fonts & text
     def font(self, f):
@@ -295,12 +301,13 @@ class Annot:
         except Exception:
             return
         self.custom_doc = {k: cu.get(k, []) for k in ("places", "paths", "notes")}
-        size = self.st.get("custom", {}).get("place_size", 8)
+        base = self.st.get("custom", {}).get("place_size", 8)
         for p in cu.get("places", []):
             try:
                 x, y = self.map.xy(p["lon"], p["lat"])
             except Exception:
                 continue
+            size = base * place_scale(p)
             if self.map.inside(x, y, 2):
                 self.landmark_spots.append((x, y - size * .45, size))
                 self.occupied.append((x - size * .4, y - size * .9, x + size * .4, y))
@@ -334,7 +341,7 @@ class Annot:
                 fl = self.font(cfg.get("path_label", lab))
                 off = fl["size"] * .9
                 self.text(a.x + math.sin(math.radians(ang)) * off, a.y - math.cos(math.radians(ang)) * off, p["name"], fl, rotate=ang)
-        size = cfg.get("place_size", 8)
+        base = cfg.get("place_size", 8)
         if cu.get("places") and not any(c.startswith(".lm .ink") for c in self.css):
             self.css.append(self.icon_css(self.st.get("landmarks", {})))
         for p in cu.get("places", []):
@@ -344,6 +351,7 @@ class Annot:
             ref = p.get("icon") or "library/pin"
             kind, _, stem = ref.partition("/")
             path = (ROOT / "icons" / "library" / f"{stem}.svg") if kind == "library" else (self.d_ / "icons" / f"{stem}.svg")
+            size = base * place_scale(p)
             self.draw_icon(path, x, y, size)
             if p.get("name"):
                 h = self.font(lab)["size"]

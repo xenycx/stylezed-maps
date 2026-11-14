@@ -547,6 +547,8 @@ def validate_custom(doc):
         icon = p.get("icon")
         if icon is not None and not (isinstance(icon, str) and re.fullmatch(r"(library|landmark)/[A-Za-z0-9_.-]{1,80}", icon)):
             fail(f"Place {p['id']!r}: icon must be \"library/<id>\" or \"landmark/<file-stem>\".")
+        if "size" in p and not (is_num(p["size"]) and 0.5 <= p["size"] <= 2.5):
+            fail(f"Place {p['id']!r}: size must be a number from 0.5 to 2.5 (1 = the style's own size).")
     for r in doc["paths"]:
         if not isinstance(r.get("name"), str) or len(r["name"]) > 200:
             fail(f"Path {r['id']!r} needs a name (a string up to 200 characters).")

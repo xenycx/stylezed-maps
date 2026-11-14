@@ -56,7 +56,8 @@ rewrite it; icons there come from `icons/auto/` and may repeat by kind.
 `data/<slug>/custom.json`
 ```json
 { "places": [ { "id": "p-1", "name": "Grandma's house", "note": "", "lon": 43.09, "lat": 42.46,
-                "icon": "library/house" } ],          // "library/<id>" or "landmark/<file-stem>"
+                "icon": "library/house",              // "library/<id>" or "landmark/<file-stem>"
+                "size": 1.5 } ],                      // optional, 0.5–2.5 × the style's place size (default 1)
   "paths":  [ { "id": "r-1", "name": "Walk to the ice cave", "kind": "trail",   // trail | road | route
                 "coords": [[43.088, 42.460], [43.08, 42.462]] } ],
   "notes":  [ { "id": "n-1", "text": "Best light at sunset", "lon": 43.07, "lat": 42.47 } ] }

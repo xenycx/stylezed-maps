@@ -312,7 +312,21 @@ function buildEditor(type, id) {
       ele.textContent = Number.isFinite(e) ? t('lm.elevation', { n: fmtNum(e) }) : '';
       ele.hidden = !Number.isFinite(e);
     });
-    ed.append(field('field.name', name), field('field.note', note, true), picker.el, ele);
+    // icon size: 0.5–2.5 × the style's own size; 1 is not stored
+    const sizeIn = h('input.size-range', { type: 'range', min: '0.5', max: '2.5', step: '0.1', 'aria-label': t('field.size') });
+    const sizeOut = h('output.size-val');
+    sizeIn.addEventListener('input', () => {
+      const v = Math.round(Number(sizeIn.value) * 10) / 10;
+      sizeOut.textContent = `×${v}`;
+      store.mutate((doc) => { const p = doc.places.find((r) => r.id === id); if (!p) return; if (v === 1) delete p.size; else p.size = v; }, `size:${id}`);
+    });
+    const sizeRow = h('div.size-row', sizeIn, sizeOut);
+    syncs.push((it) => {
+      const v = Number(it.size) || 1;
+      if (document.activeElement !== sizeIn) sizeIn.value = String(v);
+      sizeOut.textContent = `×${v}`;
+    });
+    ed.append(field('field.name', name), field('field.note', note, true), picker.el, field('field.size', sizeRow), ele);
   } else if (type === 'note') {
     const text = h('textarea', { rows: 3, maxlength: 160, placeholder: t('ph.note') });
     syncs.push(((s) => (it) => s(it.text))(bindText(text, type, id, 'text')));

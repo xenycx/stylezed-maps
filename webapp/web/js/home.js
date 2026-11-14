@@ -16,6 +16,100 @@ let info = null;          // /api/me
 let results = [];         // Nominatim matches
 let picked = null;
 let size = prefs.get('size') || 'm';
+const RADIUS = { s: 800, m: 1400, l: 2200, xl: 4500 };   // half the poster frame's width in metres (server: pipeline.SIZES)
+const FRAME_RATIO = 1.13;                                  // frame height / width of the posters
+
+// ---------------------------------------------------------------- frame picker: a small OpenStreetMap you drag
+// so the poster's frame sits where you want it. Plain tiles, no library: a handful of <img> moved by a transform.
+const TILE = 256;
+const framer = { lat: 0, lon: 0, home: null, z: 14, built: false, imgs: new Map(), drag: null };
+
+const wx = (lon, z) => (lon + 180) / 360 * TILE * 2 ** z;
+const wy = (lat, z) => { const r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * TILE * 2 ** z; };
+const lonOf = (x, z) => x / (TILE * 2 ** z) * 360 - 180;
+const latOf = (y, z) => { const n = Math.PI - 2 * Math.PI * y / (TILE * 2 ** z); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); };
+
+function frameZoom(w) {
+  // the zoom at which the frame's width takes about 55 % of the preview
+  const mpp = (2 * RADIUS[size]) / (w * 0.55);
+  return Math.max(3, Math.min(17, Math.floor(Math.log2(156543.03 * Math.cos(framer.lat * Math.PI / 180) / mpp))));
+}
+
+function drawFramer() {
+  const box = $('#framer');
+  const w = box.clientWidth, hgt = box.clientHeight;
+  if (!w) return;
+  const z = framer.z = frameZoom(w);
+  const cx = wx(framer.lon, z), cy = wy(framer.lat, z);
+  const left = cx - w / 2, top = cy - hgt / 2;
+  const tiles = box.querySelector('.framer-tiles');
+  const want = new Set();
+  const n = 2 ** z;
+  for (let tx = Math.floor(left / TILE); tx <= Math.floor((left + w) / TILE); tx++) {
+    for (let ty = Math.floor(top / TILE); ty <= Math.floor((top + hgt) / TILE); ty++) {
+      if (ty < 0 || ty >= n) continue;
+      const key = `${z}/${((tx % n) + n) % n}/${ty}`;
+      want.add(key);
+      let img = framer.imgs.get(key);
+      if (!img) {
+        img = h('img', { src: `https://tile.openstreetmap.org/${key}.png`, alt: '', draggable: 'false', decoding: 'async', width: TILE, height: TILE });
+        framer.imgs.set(key, img);
+        tiles.append(img);
+      }
+      img.style.transform = `translate(${Math.round(tx * TILE - left)}px, ${Math.round(ty * TILE - top)}px)`;
+    }
+  }
+  for (const [k, img] of framer.imgs) if (!want.has(k)) { img.remove(); framer.imgs.delete(k); }
+  // the poster frame, always in the middle: its size follows the chosen map size
+  const mpp = 156543.03 * Math.cos(framer.lat * Math.PI / 180) / 2 ** z;
+  const fw = 2 * RADIUS[size] / mpp;
+  const fb = box.querySelector('.framer-box');
+  fb.style.width = `${fw}px`;
+  fb.style.height = `${fw * FRAME_RATIO}px`;
+  const moved = framer.home && (Math.abs(framer.lat - framer.home.lat) > 1e-5 || Math.abs(framer.lon - framer.home.lon) > 1e-5);
+  $('#frame-reset').hidden = !moved;
+}
+
+function panFramer(dx, dy) {
+  const z = framer.z;
+  framer.lon = lonOf(wx(framer.lon, z) - dx, z);
+  framer.lat = Math.max(-84, Math.min(84, latOf(wy(framer.lat, z) - dy, z)));
+  drawFramer();
+}
+
+function initFramer() {
+  if (framer.built) return;
+  framer.built = true;
+  const box = $('#framer');
+  box.addEventListener('pointerdown', (e) => {
+    framer.drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    box.setPointerCapture(e.pointerId);
+    box.classList.add('is-dragging');
+  });
+  box.addEventListener('pointermove', (e) => {
+    const d = framer.drag;
+    if (!d || d.id !== e.pointerId) return;
+    panFramer(e.clientX - d.x, e.clientY - d.y);
+    d.x = e.clientX; d.y = e.clientY;
+  });
+  const end = () => { framer.drag = null; box.classList.remove('is-dragging'); };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+  box.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 80 : 24;
+    const k = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+    if (k) { e.preventDefault(); panFramer(...k); }
+  });
+  $('#frame-reset').addEventListener('click', () => { Object.assign(framer, framer.home); drawFramer(); });
+  window.addEventListener('resize', () => { if (!$('#make').hidden) drawFramer(); });
+}
+
+function centreFramer(lat, lon) {
+  framer.home = { lat, lon };
+  framer.lat = lat; framer.lon = lon;
+  initFramer();
+  requestAnimationFrame(drawFramer);
+}
 let tab = 'all';
 let offset = 0;
 let galleryToken = 0;
@@ -63,6 +157,7 @@ function renderResults() {
 
 function choose(i) {
   picked = results[i];
+  centreFramer(Number(picked.lat), Number(picked.lon));
   const cc = picked.address?.country_code;
   const want = LOCAL_LANG[cc] || (uiLang() === 'ka' ? 'ka' : 'en');
   const sel = $('#map-lang');
@@ -104,6 +199,7 @@ async function make() {
   try {
     const res = await call('POST', '/api/places', {
       osm_type: picked.osm_type, osm_id: Number(picked.osm_id), size, lang: $('#map-lang').value,
+      ...(framer.home && !$('#frame-reset').hidden ? { center: { lat: framer.lat, lon: framer.lon } } : {}),
     });
     location.href = `/m/${encodeURIComponent(res.slug)}`;
   } catch (e) {
@@ -174,7 +270,7 @@ async function boot() {
 
   for (const b of document.querySelectorAll('.ui-lang button')) b.addEventListener('click', () => setUi(b.dataset.ui));
   for (const b of document.querySelectorAll('.size-seg button')) {
-    b.addEventListener('click', () => { size = b.dataset.size; prefs.set('size', size); syncMake(); });
+    b.addEventListener('click', () => { size = b.dataset.size; prefs.set('size', size); syncMake(); if (framer.home) drawFramer(); });
   }
   $('#search').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#q').value.trim(); if (q) search(q); });
   $('#go').addEventListener('click', make);
