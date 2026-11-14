@@ -14,6 +14,7 @@ Environment (all optional for local development):
   DEV_LOGIN=1           LOCAL TESTING ONLY: /auth/dev?email=… signs in without Google
 """
 import argparse
+from html import escape
 import gzip
 import json
 import math
@@ -42,6 +43,12 @@ SLUG_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,60}")
 THEME_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,40}")
 LANG_RE = re.compile(r"[a-z]{2,3}")
 DEFAULT_THEME = "storybook"
+SITE_NAME = "სტილიზებული რუკები"
+HOME_PREVIEW_FN = lambda h: {  # noqa: E731
+    "title": SITE_NAME,
+    "description": "რეალური ადგილების ილუსტრირებული რუკები. ჩაწერეთ სოფლის ან ქალაქის სახელი, დაამატეთ თქვენი ადგილები და "
+                   "ბილიკები და ჩამოტვირთეთ პოსტერი.",
+    "image": f"{h.base_url()}/web/og.jpg"}
 
 
 def build_id():
@@ -605,20 +612,49 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(404, "not_found", "Not found.")
         self.send_file(target, cache)
 
-    def page(self, name):
+    def page(self, name, preview=None):
         # pages are never cached; the scripts and styles they load carry the build in their path, so a proxy that
         # forces long browser caching (Cloudflare does) still cannot serve the old code after a deploy
         html = (WEB / name).read_text().replace('="/web/', f'="/v/{BUILD}/web/')
+        if preview:  # link previews (Instagram, Facebook, Messenger, Telegram …) read these tags, in Georgian
+            title, desc, image = (escape(preview[k]) for k in ("title", "description", "image"))
+            url = escape(self.base_url() + urlparse(self.path).path)
+            tags = (f'<meta property="og:type" content="website"><meta property="og:site_name" content="{SITE_NAME}">'
+                    f'<meta property="og:locale" content="ka_GE"><meta property="og:title" content="{title}">'
+                    f'<meta property="og:description" content="{desc}"><meta property="og:url" content="{url}">'
+                    f'<meta property="og:image" content="{image}"><meta name="twitter:card" content="summary_large_image">'
+                    f'<meta name="description" content="{desc}">')
+            html = re.sub(r'<meta name="description"[^>]*>', "", html)
+            html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html, count=1)
+            html = html.replace("</head>", tags + "\n</head>", 1)
         self.send_bytes(html.encode(), "text/html; charset=utf-8", 200, "no-cache")
+
+    def base_url(self):
+        pub = auth.public_url()
+        if pub:
+            return pub
+        return f"{'https' if self.secure() else 'http'}://{self.headers.get('Host', 'localhost')}"
+
+    def map_preview(self, slug):
+        p = db.one("SELECT * FROM places WHERE slug=?", slug)
+        if not p or p["hidden"]:
+            return HOME_PREVIEW_FN(self)
+        name = (p["name_local"] if p["lang"] != "en" else p["name"]) or p["name"] or slug
+        thumb = out_dir(slug) / "thumb.jpg"
+        image = (f"{self.base_url()}/out/{slug}/thumb.jpg?v={int(thumb.stat().st_mtime)}" if thumb.is_file()
+                 else f"{self.base_url()}/web/og.jpg")
+        return {"title": f"{name} — {SITE_NAME}",
+                "description": f"{name}: ილუსტრირებული რუკა. გახსენით, დაამატეთ თქვენი ადგილები და ჩამოტვირთეთ პოსტერი.",
+                "image": image}
 
     # -- GET
     def route_get(self):
         url = urlparse(self.path)
         path, q = url.path, {k: v[0] for k, v in parse_qs(url.query).items()}
         if path in ("/", "/index.html"):
-            return self.page("home.html")
+            return self.page("home.html", HOME_PREVIEW_FN(self))
         if re.fullmatch(r"/m/[a-z0-9-]+/?", path):
-            return self.page("map.html")
+            return self.page("map.html", self.map_preview(path.strip("/").split("/")[1]))
         if path in ("/admin", "/admin/"):
             return self.page("admin.html")
         if path == "/robots.txt":
