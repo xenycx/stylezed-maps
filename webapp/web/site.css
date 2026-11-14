@@ -23,7 +23,8 @@
 
 .account { position: relative; display: flex; align-items: center; margin-left: 4px; }
 .account-in { gap: 8px; }
-.g-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+.btn > .g-mark { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+.g-mark svg { display: block; width: 14px; height: 14px; }
 .account-btn { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
 .account-btn:hover .avatar, .account-btn[aria-expanded="true"] .avatar { outline: 2px solid var(--line-strong); outline-offset: 1px; }
 .avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; }
